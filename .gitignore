@@ -2,4 +2,4 @@
 player0.txt
 player1.txt
 result.txt
-./data
+data/*
