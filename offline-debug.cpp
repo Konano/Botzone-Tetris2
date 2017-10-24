@@ -501,11 +501,13 @@ inline double Cal(double x, int type)
 	return 0;
 }
 
-Pii st[309]; bool LKv[MAPWIDTH+2][MAPHEIGHT+2]; int h[MAPWIDTH+2];
+Pii st[309]; bool LKv[MAPWIDTH+2][MAPHEIGHT+2]; int h[MAPWIDTH+2], d[58];
 
 inline double Value(int color, int NerID)
 {
-	int a[20]; clr(a,0);
+	Util::printField();
+	
+	int a[20]; clr(a,0); clr(h,0);
 	
 	clr(LKv,0);
 	int tot=0, LK=0, H=0; rep(x, 1, MAPWIDTH) if (!gridInfo[color][MAPHEIGHT][x]) 
@@ -530,21 +532,20 @@ inline double Value(int color, int NerID)
 	z[3]+=Ner[NerID].weight[cnt++]*min(elimCombo[color],3);
 	z[3]+=Ner[NerID].weight[cnt++]*erodedPieceCellsMetric;
 	
-	int d[LKnum+1]; clr(d,0);
-	rep(o, 1, 9) 
+	clr(d,0); rep(o, 1, 9) 
 	{
 		int mn=min(h[o],h[o+1]); bool fg=false;
-		rep(i, mn+1, h[o]) fg|=(!gridInfo[color][i][o]);
-		rep(i, mn+1, h[o+1]) fg|=(!gridInfo[color][i][o+1]);
-		if (!fg) d[LK2[min(h[o],5)][min(h[o+1],5)]]++;
+		rep(i, h[o+1]+1, h[o]) fg|=(!gridInfo[color][i][o]);
+		rep(i, h[o]+1, h[o+1]) fg|=(!gridInfo[color][i][o+1]);
+		if (!fg) d[LK2[min(h[o]-mn,5)][min(h[o+1]-mn,5)]]++;
 	}
 	rep(o, 1, 8) 
 	{
 		int mn=min(min(h[o],h[o+1]),h[o+2]); bool fg=false;
-		rep(i, mn+1, h[o]) fg|=(!gridInfo[color][i][o]);
-		rep(i, mn+1, h[o+1]) fg|=(!gridInfo[color][i][o+1]);
-		rep(i, mn+1, h[o+2]) fg|=(!gridInfo[color][i][o+2]);
-		if (!fg) d[LK3[min(h[o],5)][min(h[o+1],5)][min(h[o+2],5)]]++;
+		rep(i, h[o+1]+1, h[o]) fg|=(!gridInfo[color][i][o]);
+		rep(i, min(h[o],h[o+2])+1, h[o+1]) fg|=(!gridInfo[color][i][o+1]);
+		rep(i, h[o+1]+1, h[o+2]) fg|=(!gridInfo[color][i][o+2]);
+		if (!fg) d[LK3[min(h[o]-mn,5)][min(h[o+1]-mn,5)][min(h[o+2]-mn,5)]]++;
 	}
 	rep(o, 1, 7) if (h[o]==h[o+1] && h[o+1]==h[o+2] && h[o+2]==h[o+3]) d[0]++;
 	
