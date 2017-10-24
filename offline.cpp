@@ -499,39 +499,31 @@ inline double Cal(double x, int type)
 	return 0;
 }
 
-Pii st[309]; bool LKv[MAPWIDTH+2][MAPHEIGHT+2];
-inline int LunKuo(int color)
-{
-	clr(LKv,0);
-	int tot=0, A=0; rep(x, 1, MAPWIDTH) if (!gridInfo[color][MAPHEIGHT][x]) 
-		st[++tot]=Pii(x,MAPHEIGHT), LKv[x][MAPHEIGHT]=true; 
-	else 
-		A++;
-	while (tot)
-	{
-		int x=st[tot].fi, y=st[tot].se; tot--;
-		if (x>1) {if (gridInfo[color][y][x-1]) A++; else if (!LKv[x-1][y]) st[++tot]=Pii(x-1,y), LKv[x-1][y]=true;}
-		if (y>1) {if (gridInfo[color][y-1][x]) A++; else if (!LKv[x][y-1]) st[++tot]=Pii(x,y-1), LKv[x][y-1]=true;}
-		if (x<MAPWIDTH) {if (gridInfo[color][y][x+1]) A++; else if (!LKv[x+1][y]) st[++tot]=Pii(x+1,y), LKv[x+1][y]=true;}
-		if (y<MAPHEIGHT) {if (gridInfo[color][y+1][x]) A++; else if (!LKv[x][y+1]) st[++tot]=Pii(x,y+1), LKv[x][y+1]=true;}
-	}
-	return A;
-}
-
-int h[MAPWIDTH+2];
+Pii st[309]; bool LKv[MAPWIDTH+2][MAPHEIGHT+2]; int h[MAPWIDTH+2];
 
 inline double Value(int color, int NerID)
 {
-	int a[20]; clr(a,0); rep(x, 1, MAPWIDTH)
+	int a[20]; clr(a,0);
+	
+	clr(LKv,0);
+	int tot=0, LK=0, H=0; rep(x, 1, MAPWIDTH) if (!gridInfo[color][MAPHEIGHT][x]) 
+		st[++tot]=Pii(x,MAPHEIGHT), LKv[x][MAPHEIGHT]=true; 
+	else 
+		LK++;
+	while (tot)
 	{
-		h[x]=MAPHEIGHT; while (h[x] && !gridInfo[color][h[x]][x]) h[x]--;
-		rep(i, 1, h[x]-1) if (!gridInfo[color][h[x]-i][x]) a[h[x]-i]++;
+		int x=st[tot].fi, y=st[tot].se; tot--;
+		if (x>1) {if (gridInfo[color][y][x-1]) LK++; else if (!LKv[x-1][y]) st[++tot]=Pii(x-1,y), LKv[x-1][y]=true;}
+		if (y>1) {if (gridInfo[color][y-1][x]) LK++; else if (!LKv[x][y-1]) st[++tot]=Pii(x,y-1), LKv[x][y-1]=true;}
+		if (x<MAPWIDTH) {if (gridInfo[color][y][x+1]) LK++; else if (!LKv[x+1][y]) st[++tot]=Pii(x+1,y), LKv[x+1][y]=true;}
+		if (y<MAPHEIGHT) {if (gridInfo[color][y+1][x]) LK++; else if (!LKv[x][y+1]) st[++tot]=Pii(x,y+1), LKv[x][y+1]=true;}
 	}
+	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (gridInfo[color][y][x]) H=max(H,y), h[x]=max(h[x],y); else if (!LKv[x][y]) a[y]++;
 	
 	double z[NerN]; clr(z,0); int cnt=0;
-	rep(i, 1, MAPWIDTH) z[0]=max(z[0], Ner[NerID].weight[cnt]*h[i]); cnt++;
+	z[0]=Ner[NerID].weight[cnt++]*H;
 	rep(i, 1, 19) z[1]+=Ner[NerID].weight[cnt++]*a[i];
-	z[2]=Ner[NerID].weight[cnt++]*LunKuo(color);
+	z[2]=Ner[NerID].weight[cnt++]*LK;
 	z[3]+=Ner[NerID].weight[cnt++]*eliminateNum;
 	z[3]+=Ner[NerID].weight[cnt++]*min(elimCombo[color],3);
 	z[3]+=Ner[NerID].weight[cnt++]*erodedPieceCellsMetric;
@@ -542,7 +534,7 @@ inline double Value(int color, int NerID)
 		int mn=min(h[o],h[o+1]); bool fg=false;
 		rep(i, mn+1, h[o]) fg|=(!gridInfo[color][i][o]);
 		rep(i, mn+1, h[o+1]) fg|=(!gridInfo[color][i][o+1]);
-		if (!fg) d[LK2[h[o]][h[o+1]]]++;
+		if (!fg) d[LK2[min(h[o],5)][min(h[o+1],5)]]++;
 	}
 	rep(o, 1, 8) 
 	{
@@ -550,7 +542,7 @@ inline double Value(int color, int NerID)
 		rep(i, mn+1, h[o]) fg|=(!gridInfo[color][i][o]);
 		rep(i, mn+1, h[o+1]) fg|=(!gridInfo[color][i][o+1]);
 		rep(i, mn+1, h[o+2]) fg|=(!gridInfo[color][i][o+2]);
-		if (!fg) d[LK3[h[o]][h[o+1]][h[o+2]]]++;
+		if (!fg) d[LK3[min(h[o],5)][min(h[o+1],5)][min(h[o+2],5)]]++;
 	}
 	rep(o, 1, 7) if (h[o]==h[o+1] && h[o+1]==h[o+2] && h[o+2]==h[o+3]) d[0]++;
 	
@@ -667,7 +659,6 @@ inline void WorstDetermine(int color)
 		if (typeCountForColor[color][type] == maxCount && maxCount - minCount == 2) continue;
 		Tetris block=Determine(color, type, color^1); if (block.orientation<0) {blockForEnemy=type; return;}
 		Util::backup(); block.place(); Util::eliminate(color);
-		Util::printField();
 		if ((tmp=Value(color,color^1))<mn) mn=tmp, blockForEnemy=type;
 		Util::recover();
 	}

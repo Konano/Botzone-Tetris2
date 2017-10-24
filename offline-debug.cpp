@@ -227,7 +227,8 @@ public:
 	}
 };
 
-int erodedPieceCellsMetric;
+int erodedPieceCellsMetric, eliminateNum;
+int LK2[6][6], LK3[6][6][6], LKnum;
 
 namespace Util
 {
@@ -246,12 +247,15 @@ namespace Util
 			gridInfo[1][0][i] = gridInfo[1][MAPHEIGHT + 1][i] = -2;
 			gridInfo[0][0][i] = gridInfo[0][MAPHEIGHT + 1][i] = -2;
 		}
+		
+		rep(a1,0,5) rep(a2,0,5) if (!(a1 && a2) && !LK2[a1][a2]) LK2[a1][a2]=LK2[a2][a1]=++LKnum;
+		rep(a1,0,5) rep(a2,0,5) rep(a3,0,5) if (!(a1 && a2 && a3) && !LK3[a1][a2][a3]) LK3[a1][a2][a3]=LK3[a3][a2][a1]=++LKnum;
 	}
  
 	// ÏûÈ¥ÐÐ
 	void eliminate(int color)
 	{
-		erodedPieceCellsMetric=0;
+		erodedPieceCellsMetric = eliminateNum = 0;
 		
 		int &count = transCount[color] = 0;
 		int i, j, emptyFlag, fullFlag, firstFull = 1, hasBonus = 0;
@@ -269,6 +273,8 @@ namespace Util
 			}
 			if (fullFlag)
 			{
+				eliminateNum++;
+				
 				for (j = 1; j <= MAPWIDTH; j++)
 					erodedPieceCellsMetric += (gridInfo[color][i][j]>>1);
 				
@@ -458,14 +464,13 @@ namespace Util
 
 
 
-#define NerM 29
-#define NerN 10
-#define NerNum 10
+#define NerM 433
+#define NerN 11
 
 struct Neuron
 {
 	int ActType;
-	double weight[NerM][NerN], b0[NerN], theta[NerN], b1;
+	double weight[NerM], b0[NerN], theta[NerN], b1;
 } Ner[2];
 
 inline void GetNer(int a)
@@ -475,7 +480,7 @@ inline void GetNer(int a)
 	filename[6]='0'+a;
 	freopen(filename, "r", stdin);
 	
-	rep(i, 0, NerM-1) rep(j, 0, NerN-1) scanf("%lf", &Ner[a].weight[i][j]);
+	rep(i, 0, NerM-1) scanf("%lf", &Ner[a].weight[i]);
 	rep(i, 0, NerN-1) scanf("%lf", &Ner[a].b0[i]);
 	rep(i, 0, NerN-1) scanf("%lf", &Ner[a].theta[i]);
 	scanf("%lf%d", &Ner[a].b1, &Ner[a].ActType);
@@ -496,29 +501,59 @@ inline double Cal(double x, int type)
 	return 0;
 }
 
+Pii st[309]; bool LKv[MAPWIDTH+2][MAPHEIGHT+2]; int h[MAPWIDTH+2];
+
 inline double Value(int color, int NerID)
 {
-	double a[NerM];
+	int a[20]; clr(a,0);
 	
-	a[27]=0; rep(x, 1, MAPWIDTH)
+	clr(LKv,0);
+	int tot=0, LK=0, H=0; rep(x, 1, MAPWIDTH) if (!gridInfo[color][MAPHEIGHT][x]) 
+		st[++tot]=Pii(x,MAPHEIGHT), LKv[x][MAPHEIGHT]=true; 
+	else 
+		LK++;
+	while (tot)
 	{
-		int H=MAPHEIGHT; while (H && !gridInfo[color][H][x]) H--;
-		a[x*2-2]=1-sqrt((MAPHEIGHT-H)/MAPHEIGHT);
-		a[x*2-1]=0;
-		rep(i, 1, H-1) if (!gridInfo[color][H-i][x]) a[x*2-1]+=1-sqrt((H-1-i)/(H-1));
+		int x=st[tot].fi, y=st[tot].se; tot--;
+		if (x>1) {if (gridInfo[color][y][x-1]) LK++; else if (!LKv[x-1][y]) st[++tot]=Pii(x-1,y), LKv[x-1][y]=true;}
+		if (y>1) {if (gridInfo[color][y-1][x]) LK++; else if (!LKv[x][y-1]) st[++tot]=Pii(x,y-1), LKv[x][y-1]=true;}
+		if (x<MAPWIDTH) {if (gridInfo[color][y][x+1]) LK++; else if (!LKv[x+1][y]) st[++tot]=Pii(x+1,y), LKv[x+1][y]=true;}
+		if (y<MAPHEIGHT) {if (gridInfo[color][y+1][x]) LK++; else if (!LKv[x][y+1]) st[++tot]=Pii(x,y+1), LKv[x][y+1]=true;}
 	}
+	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (gridInfo[color][y][x]) H=max(H,y), h[x]=max(h[x],y); else if (!LKv[x][y]) a[y]++;
 	
-	int mn=1000; rep(i, 0, 6) mn=min(mn, typeCountForColor[color][i]);
-	rep(i, 0, 6) a[20+i]=typeCountForColor[color][i]-mn;
+	double z[NerN]; clr(z,0); int cnt=0;
+	z[0]=Ner[NerID].weight[cnt++]*H;
+	rep(i, 1, 19) z[1]+=Ner[NerID].weight[cnt++]*a[i];
+	z[2]=Ner[NerID].weight[cnt++]*LK;
+	z[3]+=Ner[NerID].weight[cnt++]*eliminateNum;
+	z[3]+=Ner[NerID].weight[cnt++]*min(elimCombo[color],3);
+	z[3]+=Ner[NerID].weight[cnt++]*erodedPieceCellsMetric;
 	
-	a[28]=elimCombo[color];
+	int d[LKnum+1]; clr(d,0);
+	rep(o, 1, 9) 
+	{
+		int mn=min(h[o],h[o+1]); bool fg=false;
+		rep(i, mn+1, h[o]) fg|=(!gridInfo[color][i][o]);
+		rep(i, mn+1, h[o+1]) fg|=(!gridInfo[color][i][o+1]);
+		if (!fg) d[LK2[min(h[o],5)][min(h[o+1],5)]]++;
+	}
+	rep(o, 1, 8) 
+	{
+		int mn=min(min(h[o],h[o+1]),h[o+2]); bool fg=false;
+		rep(i, mn+1, h[o]) fg|=(!gridInfo[color][i][o]);
+		rep(i, mn+1, h[o+1]) fg|=(!gridInfo[color][i][o+1]);
+		rep(i, mn+1, h[o+2]) fg|=(!gridInfo[color][i][o+2]);
+		if (!fg) d[LK3[min(h[o],5)][min(h[o+1],5)][min(h[o+2],5)]]++;
+	}
+	rep(o, 1, 7) if (h[o]==h[o+1] && h[o+1]==h[o+2] && h[o+2]==h[o+3]) d[0]++;
 	
-	double z[NerN];
-	rep(i, 0, NerN-1) z[i]=Ner[NerID].b0[i];
-	rep(i, 0, NerN-1) rep(j, 0, NerM-1) z[i]+=a[j]*Ner[NerID].weight[j][i];
+	int mn=1000; rep(o, 0, 6) mn=min(mn, typeCountForColor[color][o]);
+	double dd[3]={Ner[NerID].weight[cnt+1],Ner[NerID].weight[cnt+2],Ner[NerID].weight[cnt+3]}; cnt+=3;
+	rep(o, 0, 6) rep(i, 0, LKnum) z[4+o]+=Ner[NerID].weight[cnt++]*d[i]*dd[2+mn-typeCountForColor[color][o]];
 	
+	rep(i, 0, NerN-1) z[i]+=Ner[NerID].b0[i];
 	rep(i, 0, NerN-1) Cal(z[i], Ner[NerID].ActType);
-		
 	double y=Ner[NerID].b1;
 	rep(i, 0, NerN-1) y+=z[i]*Ner[NerID].theta[i];
 	
