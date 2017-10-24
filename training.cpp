@@ -78,10 +78,10 @@ inline void NeuronComb(Neuron &a, Neuron &b, Neuron &c, double o)
 {
 	int cnt=0;
 	c.weight[cnt]=(rand01()>o?a:b).weight[cnt], cnt++;
-	for(int i=1,rd=rand01()>o; i<=19; i++) c.weight[cnt]=(rd?a:b).weight[cnt], cnt++;
+	rep(i, 1, 5) for(int i=1,rd=rand01()>o; i<=4; i++) c.weight[cnt]=(rd?a:b).weight[cnt], cnt++;
 	rep(i, 1, 4) c.weight[cnt]=(rand01()>o?a:b).weight[cnt], cnt++;
 	for(int i=1,rd=rand01()>o; i<=3; i++) c.weight[cnt]=(rd?a:b).weight[cnt], cnt++;
-	rep(i, 1, 7) for(int j=1,rd=rand01()>o; j<=58; j++) c.weight[cnt]=(rd?a:b).weight[cnt], cnt++;
+	rep(i, 1, 58) for(int j=1,rd=rand01()>o; j<=7; j++) c.weight[cnt]=(rd?a:b).weight[cnt], cnt++;
 	
 	rep(i, 0, NerN-1) c.b0[i]=(rand01()>o?a:b).b0[i];
 	rep(i, 0, NerN-1) c.theta[i]=(rand01()>o?a:b).theta[i];
