@@ -144,6 +144,7 @@ inline void InputData()
 	NerCnt=v[NerNum];
 }
 
+int Test50=1;
 inline void Game(int player0, int player1)
 {
 	freopen("player0.txt", "w", stdout);
@@ -170,8 +171,8 @@ inline void Game(int player0, int player1)
 	{
 		if (!player0) swap(player0, player1), Result*=-1;
 		initbot[++tot]=Result+1;
-		if (Result>0) hp[player0]+=5;
-		if (Result<0) hp[player0]-=1;
+		if (Result>0) hp[player0]+=5-Test50;
+		if (Result<0) hp[player0]-=Test50;
 		
 	}
 }
@@ -190,7 +191,7 @@ int main()
 		while (A==B)
 		{
 			A=rand()%(NerNum+OPNum), B=rand()%(NerNum+OPNum);
-			if (!min(A,B) && max(A,B)>4) A=B=0;
+			if (!min(A,B) && max(A,B)>6) A=B=0;
 		}
 		Game(A,B); if (A && hp[A]<=0) Death(A); if (B && hp[B]<=0) Death(B);
 		
@@ -216,6 +217,7 @@ int main()
 				int sum=0;
 				rep(i, tot-50+1, tot) sum+=initbot[i];
 				printf("recent 50: %.0lf%%\n", (1.0*sum/50)/2*100);
+				Test50=(int)((1.0*sum/50)/4*10);
 			}
 			if (tot>=20)
 			{
