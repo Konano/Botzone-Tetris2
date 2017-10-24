@@ -574,12 +574,34 @@ inline Tetris Determine(int currBotColor, int type, int NerColor)
 	
 	Tetris block(type, currBotColor), BestAction(type, currBotColor); BestAction.set(1,1,-1);
 	
+	queue<node>q; clr(vis,0);
+	
+	rep(x, 1, MAPWIDTH) rep(y, MAPHEIGHT-3, MAPHEIGHT) rep(o, 0, 3) if (block.set(x,y,o).onTop())
+		vis[x][y][o]=1, q.push((node){x,y,o});
+	
+	double mx=-1e30, tmp;
+	while (!q.empty())
+	{
+		int x=q.front().x, y=q.front().y, o=q.front().o; q.pop();
+		block.set(x,y,o);
+		if (block.moveleft() && !vis[x-1][y][o]) vis[x-1][y][o]=1, q.push((node){x-1,y,o});
+		if (block.moveright() && !vis[x+1][y][o]) vis[x+1][y][o]=1, q.push((node){x+1,y,o});
+		if (block.movedown() && !vis[x][y-1][o]) vis[x][y-1][o]=1, q.push((node){x,y-1,o});
+		rep(i, 0, 3) if (block.rotation(i) && !vis[x][y][i]) vis[x][y][i]=1, q.push((node){x,y,i});
+		
+		if (block.onGround() && Ner[NerColor].ActType>=0)
+		{
+			Util::backup(); block.place(); Util::eliminate(currBotColor); // 消行，对方不加行
+			if ((tmp=Value(currBotColor,NerColor))>mx) mx=tmp, BestAction.set(block.blockX,block.blockY,block.orientation);
+			Util::recover();
+		}
+	}
+	
 	if (Ner[NerColor].ActType<0)
 	{
 		if (-Ner[NerColor].ActType==1)
 		{
-			double mx=-1e30;
-			rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) rep(o, 0, 3) if (block.set(x,y,o).onGround())
+			double mx=-1e30; rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) rep(o, 0, 3) if (block.set(x,y,o).onGround() && vis[x][y][o])
 			{
 				int lbx[MAPWIDTH+2], lby[MAPHEIGHT+2], h[MAPWIDTH+2]; clr(lbx,0); clr(lby,0); clr(h,0);
 				double v=-(y-1);
@@ -606,33 +628,6 @@ inline Tetris Determine(int currBotColor, int type, int NerColor)
 		{
 			
 		} */
-		return BestAction;
-	}
-	
-	queue<node>q; clr(vis,0);
-	
-	rep(x, 1, MAPWIDTH) rep(y, MAPHEIGHT-3, MAPHEIGHT) rep(o, 0, 3) if (block.set(x,y,o).onTop())
-	{
-		vis[x][y][o]=1;
-		q.push((node){x,y,o});
-	}
-	
-	double mx=-1e30, tmp;
-	while (!q.empty())
-	{
-		int x=q.front().x, y=q.front().y, o=q.front().o; q.pop();
-		block.set(x,y,o);
-		if (block.moveleft() && !vis[x-1][y][o]) vis[x-1][y][o]=1, q.push((node){x-1,y,o});
-		if (block.moveright() && !vis[x+1][y][o]) vis[x+1][y][o]=1, q.push((node){x+1,y,o});
-		if (block.movedown() && !vis[x][y-1][o]) vis[x][y-1][o]=1, q.push((node){x,y-1,o});
-		rep(i,0,3) if (block.rotation(i) && !vis[x][y][i]) vis[x][y][i]=1, q.push((node){x,y,i});
-		
-		if (block.onGround())
-		{
-			Util::backup(); block.place(); Util::eliminate(currBotColor); // 消行，对方不加行
-			if ((tmp=Value(currBotColor,NerColor))>mx) mx=tmp, BestAction.set(block.blockX,block.blockY,block.orientation);
-			Util::recover();
-		}
 	}
 	
 	return BestAction;
