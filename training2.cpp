@@ -147,11 +147,11 @@ inline void InputData()
 inline void Game(int player0, int player1)
 {
 	freopen("player0.txt", "w", stdout);
-	OutputNer(v[player0]);
+	OutputNer(player0);
 	fclose(stdout);
 	
 	freopen("player1.txt", "w", stdout);
-	OutputNer(v[player1]);
+	OutputNer(player1);
 	fclose(stdout);
 	
 	system("offline.exe");
