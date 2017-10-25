@@ -728,10 +728,9 @@ int main()
  
 		// 我当时把上一块落到了 x y o！
 		Tetris myBlock(currTypeForColor[0], 0);
-		myBlock.set(typePosX, typePosY, typePosO).place();
+		myBlock.set(typePosX, typePosY, typePosO);
  
 		// 我给对方什么块来着？
-		typeCountForColor[1][blockForEnemy]++;
 		nextTypeForColor[1] = blockForEnemy;
  
 		// 然后读自己的输入，也就是对方的行为
@@ -740,11 +739,15 @@ int main()
  
 		// 对方当时把上一块落到了 x y o！
 		Tetris enemyBlock(currTypeForColor[1], 1);
-		enemyBlock.set(typePosX, typePosY, typePosO).place();
+		enemyBlock.set(typePosX, typePosY, typePosO);
  
 		// 对方给我什么块来着？
-		typeCountForColor[0][blockForEnemy]++;
 		nextTypeForColor[0] = blockForEnemy;
+		
+		myBlock.place();
+		enemyBlock.place();
+		typeCountForColor[0][nextTypeForColor[0]]++;
+		typeCountForColor[1][nextTypeForColor[1]]++;
 		
 		Util::printField();
 		system("pause");

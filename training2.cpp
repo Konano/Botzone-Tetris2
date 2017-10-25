@@ -93,11 +93,10 @@ inline void Death(int a)
 	NeuronComb(Ner[v[rand()%4+1]], Ner[v[rand()%4+1]], Ner[v[a]], 0.5+rand2()*0.2);
 	NeuronVary(Ner[v[a]], rand01()/10*3);
 	
-	while ((NerCnt+1)%100==v[1]%100)
+	while (NerCnt%100==v[1]%100)
 	{
-		Ner[++NerCnt]=Ner[v[1]];
 		rep(i, 2, NerNum) swap(v[i-1], v[i]), swap(hp[i-1], hp[i]);
-		v[NerNum]=NerCnt, hp[NerNum]=HPinit;
+		hp[NerNum]=min(hp[NerNum], HPinit*2);
 	}
 }
 
@@ -143,7 +142,9 @@ inline void InputData()
 	NerCnt=v[NerNum];
 }
 
-inline void Game(int player0, int player1)
+int Lwin, Rwin;
+
+inline int Game(int player0, int player1)
 {
 	freopen("player0.txt", "w", stdout);
 	OutputNer(player0);
@@ -160,8 +161,10 @@ inline void Game(int player0, int player1)
 	scanf("%d", &Result);
 	fclose(stdin);
 	
-	if (Result>0) hp[player0]+=1, hp[player1]-=2;
-	if (Result<0) hp[player0]-=2, hp[player1]+=1;
+	if (Result>0) hp[player0]+=1, hp[player1]-=2, Lwin++;
+	if (Result<0) hp[player0]-=2, hp[player1]+=1, Rwin++;
+	
+	return Result;
 }
 
 inline void OutputSomething()
@@ -169,13 +172,14 @@ inline void OutputSomething()
 	puts("Alive:");
 	rep(i, 1, NerNum) printf("%d%c", v[i], i==NerNum?'\n':'\t');
 	rep(i, 1, NerNum) printf("%d%c", hp[i], i==NerNum?'\n':'\t');
+	printf("%.5lf\n", 1.0*Lwin/(Lwin+Rwin));
 	puts("");
 }
 
 int TIM=0;
 int main()
 {
-	srand(time(NULL));
+	//srand(time(NULL));
 	
 	int tmp; scanf("%d", &tmp);
 	if (tmp) InputData(); else rep(i, 1, NerNum) NeuronInit(i);
