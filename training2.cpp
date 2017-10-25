@@ -92,6 +92,13 @@ inline void Death(int a)
 	a=NerNum; v[a]=++NerCnt, hp[a]=HPinit;
 	NeuronComb(Ner[v[rand()%4+1]], Ner[v[rand()%4+1]], Ner[v[a]], 0.5+rand2()*0.2);
 	NeuronVary(Ner[v[a]], rand01()/10*3);
+	
+	while ((NerCnt+1)%100==v[1]%100)
+	{
+		Ner[++NerCnt]=Ner[v[1]];
+		rep(i, 2, NerNum) swap(v[i-1], v[i]), swap(hp[i-1], hp[i]);
+		v[NerNum]=NerCnt, hp[NerNum]=HPinit;
+	}
 }
 
 
