@@ -38,35 +38,33 @@ typedef unsigned long long ull;
  
 #define MAPWIDTH 10
 #define MAPHEIGHT 20
- 
-// 我所在队伍的颜色（0为红，1为蓝，仅表示队伍，不分先后）
-int currBotColor;
-int enemyColor;
+
+int ED;
  
 // 先y后x，记录地图状态，0为空，1为以前放置，2为刚刚放置，负数为越界
 // （2用于在清行后将最后一步撤销再送给对方）
-int gridInfo[2][MAPHEIGHT + 2][MAPWIDTH + 2] = { 0 };
+int gridInfo[2][MAPHEIGHT + 2][MAPWIDTH + 2];  // backup
  
 // 代表分别向对方转移的行
-int trans[2][4][MAPWIDTH + 2] = { 0 };
+int trans[2][4][MAPWIDTH + 2];  // backup
  
 // 转移行数
-int transCount[2] = { 0 };
+int transCount[2];  // backup
  
 // 运行eliminate后的当前高度
-int maxHeight[2] = { 0 };
+int maxHeight[2];  // backup
  
 // 总消去行数的分数之和
-int elimTotal[2] = { 0 };
+int elimTotal[2];  // backup
 
 // 连续几回合发生过消去了
-int elimCombo[2] = { 0 };
+int elimCombo[2];  // backup
  
 // 一次性消去行数对应分数
-const int elimBonus[] = { 0, 1, 3, 5, 7 };
+const int elimBonus[] = { 0, 1, 3, 5, 7 }; 
  
 // 给对应玩家的各类块的数目总计
-int typeCountForColor[2][7] = { 0 };
+int typeCountForColor[2][7]; // backup
  
 const int blockShape[7][4][8] = {
 	{ { 0,0,1,0,-1,0,-1,-1 },{ 0,0,0,1,0,-1,1,-1 },{ 0,0,-1,0,1,0,1,1 },{ 0,0,0,-1,0,1,-1,1 } },
@@ -112,7 +110,7 @@ struct backupNode
 	// 给对应玩家的各类块的数目总计
 	int typeCountForColor[2][7];
 } backupQueue[3]; int backupNum;
- 
+
 class Tetris
 {
 public:
@@ -123,6 +121,7 @@ public:
 	const int(*shape)[8]; // 当前类型方块的形状定义
  
 	int color;
+	
  
 	Tetris(int t, int color) : blockType(t), shape(blockShape[t]), color(color)
 	{ }
@@ -163,7 +162,7 @@ public:
 		rep(i, 0, 3) if (blockY + shape[orientation][i*2+1] == MAPHEIGHT) return true;
 		return false;
 	}
- 
+	
 	// 判断是否落地
 	inline bool onGround()
 	{
@@ -188,6 +187,7 @@ public:
 		return true;
 	}
 	
+	// 检查能否向下移动
 	inline bool movedown(){return isValid(-1, blockY - 1);}
 	inline bool moveleft(){return isValid(blockX - 1);}
 	inline bool moveright(){return isValid(blockX + 1);}
@@ -229,9 +229,11 @@ public:
 
 int erodedPieceCellsMetric, eliminateNum;
 int LK2[6][6], LK3[6][6][6], LKnum;
- 
+
 namespace Util
 {
+	
+	// 围一圈护城河
 	inline void init()
 	{
 		int i;
@@ -313,12 +315,12 @@ namespace Util
 		elimTotal[color] += elimBonus[count];
 	}
  
-	// 转移双方消去的行，返回-1表示继续，否则返回输者
+	// 转移双方消去的行，返回0表示继续，否则返回输者
 	int transfer()
 	{
 		int color1 = 0, color2 = 1;
 		if (transCount[color1] == 0 && transCount[color2] == 0)
-			return -1;
+			return 0;
 		if (transCount[color1] == 0 || transCount[color2] == 0)
 		{
 			if (transCount[color1] == 0 && transCount[color2] > 0)
@@ -326,7 +328,7 @@ namespace Util
 			int h2;
 			maxHeight[color2] = h2 = maxHeight[color2] + transCount[color1];
 			if (h2 > MAPHEIGHT)
-				return color2;
+				return 1<<color2;
 			int i, j;
  
 			for (i = h2; i > transCount[color1]; i--)
@@ -336,16 +338,23 @@ namespace Util
 			for (i = transCount[color1]; i > 0; i--)
 				for (j = 1; j <= MAPWIDTH; j++)
 					gridInfo[color2][i][j] = trans[color1][i - 1][j];
-			return -1;
+			return 0;
 		}
 		else
 		{
 			int h1, h2;
 			maxHeight[color1] = h1 = maxHeight[color1] + transCount[color2];//从color1处移动count1去color2
 			maxHeight[color2] = h2 = maxHeight[color2] + transCount[color1];
- 
-			if (h1 > MAPHEIGHT) return color1;
-			if (h2 > MAPHEIGHT) return color2;
+			
+			if (h1 > MAPHEIGHT && h2 > MAPHEIGHT)
+			{
+				if (elimTotal[color1]!=elimTotal[color2]) 
+					return 1<<(elimTotal[color1]<elimTotal[color2]?color1:color2); 
+				else 
+					return 3;
+			}
+			if (h1 > MAPHEIGHT) return 1<<color1;
+			if (h2 > MAPHEIGHT) return 1<<color2;
  
 			int i, j;
 			for (i = h2; i > transCount[color1]; i--)
@@ -364,7 +373,7 @@ namespace Util
 				for (j = 1; j <= MAPWIDTH; j++)
 					gridInfo[color1][i][j] = trans[color2][i - 1][j];
  
-			return -1;
+			return 0;
 		}
 	}
 	
@@ -408,6 +417,21 @@ namespace Util
 			typeCountForColor[o][i]=backupQueue[backupNum].typeCountForColor[o][i];
 	}
  
+	// 颜色方还能否继续游戏
+	/* inline bool canPut(int color, int blockType)
+	{
+		Tetris t(blockType, color);
+		for (int y = MAPHEIGHT; y >= 1; y--)
+			for (int x = 1; x <= MAPWIDTH; x++)
+				for (int o = 0; o < 4; o++)
+				{
+					t.set(x, y, o);
+					if (t.isValid() && checkDirectDropTo(color, blockType, x, y, o))
+						return true;
+				}
+		return false;
+	} */
+ 
 	// 打印场地用于调试
 	inline void printField()
 	{
@@ -428,9 +452,16 @@ namespace Util
 				cout << i2s[gridInfo[1][y][x] + 2];
 			cout << endl;
 		}
+		rep(i, 0, 6) printf("%d%c", typeCountForColor[0][i], i==6?'\n':' ');
+		rep(i, 0, 6) printf("%d%c", typeCountForColor[1][i], i==6?'\n':' ');
 #endif
 	}
 }
+
+
+
+
+
 
 
 #define NerM 433
@@ -440,23 +471,19 @@ struct Neuron
 {
 	int ActType;
 	double weight[NerM], b0[NerN], theta[NerN], b1;
-} Ner;
+} Ner[2];
 
-inline void GetNer()
+inline void GetNer(int a)
 {
-
-#ifndef _BOTZONE_ONLINE
-	freopen("data\\ner.txt", "r", stdin);
-#endif
-
-#ifdef _BOTZONE_ONLINE
-	freopen("data//ner.txt", "r", stdin);
-#endif
+	char filename[12]="player0.txt";
 	
-	rep(i, 0, NerM-1) scanf("%lf", &Ner.weight[i]);
-	rep(i, 0, NerN-1) scanf("%lf", &Ner.b0[i]);
-	rep(i, 0, NerN-1) scanf("%lf", &Ner.theta[i]);
-	scanf("%lf%d", &Ner.b1, &Ner.ActType);
+	filename[6]='0'+a;
+	freopen(filename, "r", stdin);
+	
+	rep(i, 0, NerM-1) scanf("%lf", &Ner[a].weight[i]);
+	rep(i, 0, NerN-1) scanf("%lf", &Ner[a].b0[i]);
+	rep(i, 0, NerN-1) scanf("%lf", &Ner[a].theta[i]);
+	scanf("%lf%d", &Ner[a].b1, &Ner[a].ActType);
 	
 	fclose(stdin);
 }
@@ -474,9 +501,9 @@ inline double Cal(double x, int type)
 	return 0;
 }
 
-Pii st[209]; bool LKv[MAPWIDTH+2][MAPHEIGHT+2]; int h[MAPWIDTH+2], d[58];
+Pii st[309]; bool LKv[MAPWIDTH+2][MAPHEIGHT+2]; int h[MAPWIDTH+2], d[58];
 
-inline double Value(int color)
+inline double Value(int color, int NerID)
 {
 	int a[20]; clr(a,0); clr(h,0);
 	
@@ -496,12 +523,12 @@ inline double Value(int color)
 	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (gridInfo[color][y][x]) H=max(H,y), h[x]=max(h[x],y); else if (!LKv[x][y]) a[y]++;
 	
 	double z[NerN]; clr(z,0); int cnt=0;
-	z[0]=Ner.weight[cnt++]*H;
-	rep(i, 1, 19) z[1]+=Ner.weight[cnt++]*a[i];
-	z[2]=Ner.weight[cnt++]*LK;
-	z[3]+=Ner.weight[cnt++]*eliminateNum;
-	z[3]+=Ner.weight[cnt++]*min(elimCombo[color],3);
-	z[3]+=Ner.weight[cnt++]*erodedPieceCellsMetric;
+	z[0]=Ner[NerID].weight[cnt++]*H;
+	rep(i, 1, 19) z[1]+=Ner[NerID].weight[cnt++]*a[i];
+	z[2]=Ner[NerID].weight[cnt++]*LK;
+	z[3]+=Ner[NerID].weight[cnt++]*eliminateNum;
+	z[3]+=Ner[NerID].weight[cnt++]*min(elimCombo[color],3);
+	z[3]+=Ner[NerID].weight[cnt++]*erodedPieceCellsMetric;
 	
 	clr(d,0); rep(o, 1, 9) 
 	{
@@ -521,13 +548,13 @@ inline double Value(int color)
 	rep(o, 1, 7) if (h[o]==h[o+1] && h[o+1]==h[o+2] && h[o+2]==h[o+3]) d[0]++;
 	
 	int mn=1000; rep(o, 0, 6) mn=min(mn, typeCountForColor[color][o]);
-	double dd[3]={Ner.weight[cnt+1],Ner.weight[cnt+2],Ner.weight[cnt+3]}; cnt+=3;
-	rep(o, 0, 6) rep(i, 0, LKnum) z[4+o]+=Ner.weight[cnt++]*d[i]*dd[2+mn-typeCountForColor[color][o]];
+	double dd[3]={Ner[NerID].weight[cnt+1],Ner[NerID].weight[cnt+2],Ner[NerID].weight[cnt+3]}; cnt+=3;
+	rep(o, 0, 6) rep(i, 0, LKnum) z[4+o]+=Ner[NerID].weight[cnt++]*d[i]*dd[2+mn-typeCountForColor[color][o]];
 	
-	rep(i, 0, NerN-1) z[i]+=Ner.b0[i];
-	rep(i, 0, NerN-1) Cal(z[i], Ner.ActType);
-	double y=Ner.b1;
-	rep(i, 0, NerN-1) y+=z[i]*Ner.theta[i];
+	rep(i, 0, NerN-1) z[i]+=Ner[NerID].b0[i];
+	rep(i, 0, NerN-1) Cal(z[i], Ner[NerID].ActType);
+	double y=Ner[NerID].b1;
+	rep(i, 0, NerN-1) y+=z[i]*Ner[NerID].theta[i];
 	
 	return y;
 }
@@ -535,12 +562,18 @@ inline double Value(int color)
 
 
 
+
+
+
+int blockType, typePosX, typePosY, typePosO, blockForEnemy, nextTypeForColor[2], currTypeForColor[2];
+
 struct node{int x,y,o;};
 
 bool vis[MAPWIDTH+2][MAPHEIGHT+2][4];
 
-inline Tetris Determine(int currBotColor, int type)
+inline Tetris Determine(int currBotColor, int type, int NerColor)
 {
+	
 	Tetris block(type, currBotColor), BestAction(type, currBotColor); BestAction.set(1,1,-1);
 	
 	queue<node>q; clr(vis,0);
@@ -558,17 +591,17 @@ inline Tetris Determine(int currBotColor, int type)
 		if (block.movedown() && !vis[x][y-1][o]) vis[x][y-1][o]=1, q.push((node){x,y-1,o});
 		rep(i, 0, 3) if (block.rotation(i) && !vis[x][y][i]) vis[x][y][i]=1, q.push((node){x,y,i});
 		
-		if (block.onGround() && Ner.ActType>=0)
+		if (block.onGround() && Ner[NerColor].ActType>=0)
 		{
 			Util::backup(); block.place(); Util::eliminate(currBotColor); // 消行，对方不加行
-			if ((tmp=Value(currBotColor))>mx) mx=tmp, BestAction.set(block.blockX,block.blockY,block.orientation);
+			if ((tmp=Value(currBotColor,NerColor))>mx) mx=tmp, BestAction.set(block.blockX,block.blockY,block.orientation);
 			Util::recover();
 		}
 	}
 	
-	if (Ner.ActType<0)
+	if (Ner[NerColor].ActType<0)
 	{
-		if (-Ner.ActType==1)
+		if (-Ner[NerColor].ActType==1)
 		{
 			double mx=-1e30; rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) rep(o, 0, 3) if (block.set(x,y,o).onGround() && vis[x][y][o])
 			{
@@ -585,12 +618,24 @@ inline Tetris Determine(int currBotColor, int type)
 				Util::recover();
 			}
 		}
+	/* 	if (-Ner[NerColor].ActType==2)
+		{
+			
+		}
+		if (-Ner[NerColor].ActType==3)
+		{
+			
+		}
+		if (-Ner[NerColor].ActType==4)
+		{
+			
+		} */
 	}
 	
 	return BestAction;
 }
 
-inline int WorstDetermine(int color)
+inline void WorstDetermine(int color)
 {
 	// 再看看给对方什么好
  
@@ -603,130 +648,120 @@ inline int WorstDetermine(int color)
 			minCount = typeCountForColor[color][type];
 	}
 	
-	int blockForEnemy=0; double mn=1e30, tmp;
+	blockForEnemy=0; double mn=1e30, tmp;
 	
 	rep(type, 0, 6)
 	{
 		if (typeCountForColor[color][type] == maxCount && maxCount - minCount == 2) continue;
-		Tetris block=Determine(color, type); if (block.orientation<0) return type;
+		Tetris block=Determine(color, type, color^1); if (block.orientation<0) {blockForEnemy=type; return;}
 		Util::backup(); block.place(); Util::eliminate(color);
-		if ((tmp=Value(color))<mn) mn=tmp, blockForEnemy=type;
+		if ((tmp=Value(color,color^1))<mn) mn=tmp, blockForEnemy=type;
 		Util::recover();
 	}
-	
-	return blockForEnemy;
 }
- 
- 
-int main()
+
+inline void PlayerAction(int currBotColor)
 {
-	// 加速输入
-	istream::sync_with_stdio(false);
-	srand(time(NULL));
-	//srand(2333);
-	Util::init();
- 
-	int turnID, blockType;
-	int nextTypeForColor[2];
-	cin >> turnID;
- 
-	// 先读入第一回合，得到自己的颜色
-	// 双方的第一块肯定是一样的
-	cin >> blockType >> currBotColor;
-	enemyColor = 1 - currBotColor;
-	nextTypeForColor[0] = blockType;
-	nextTypeForColor[1] = blockType;
-	typeCountForColor[0][blockType]++;
-	typeCountForColor[1][blockType]++;
- 
-	// 然后分析以前每回合的输入输出，并恢复状态
-	// 循环中，color 表示当前这一行是 color 的行为
-	// 平台保证所有输入都是合法输入
-	for (int i = 1; i < turnID; i++)
-	{
-		int currTypeForColor[2] = { nextTypeForColor[0], nextTypeForColor[1] };
-		int x, y, o;
-		// 根据这些输入输出逐渐恢复状态到当前回合
- 
-		// 先读自己的输出，也就是自己的行为
-		// 自己的输出是自己的最后一步
-		// 然后模拟最后一步放置块
-		cin >> blockType >> x >> y >> o;
- 
-		// 我当时把上一块落到了 x y o！
-		Tetris myBlock(currTypeForColor[currBotColor], currBotColor);
-		myBlock.set(x, y, o).place();
- 
-		// 我给对方什么块来着？
-		typeCountForColor[enemyColor][blockType]++;
-		nextTypeForColor[enemyColor] = blockType;
- 
-		// 然后读自己的输入，也就是对方的行为
-		// 裁判给自己的输入是对方的最后一步
-		cin >> blockType >> x >> y >> o;
- 
-		// 对方当时把上一块落到了 x y o！
-		Tetris enemyBlock(currTypeForColor[enemyColor], enemyColor);
-		enemyBlock.set(x, y, o).place();
- 
-		// 对方给我什么块来着？
-		typeCountForColor[currBotColor][blockType]++;
-		nextTypeForColor[currBotColor] = blockType;
- 
-		// 检查消去
-		Util::eliminate(0);
-		Util::eliminate(1);
- 
-		// 进行转移
-		Util::transfer();
-	}
- 
- 
-	int blockForEnemy, finalX, finalY, finalO;
- 
-	// 做出决策（你只需修改以下部分）
+	int enemyColor=1^currBotColor;
 	
-	GetNer();
-	
-	int currTypeForColor[2] = { nextTypeForColor[0], nextTypeForColor[1] };
-	
-	Tetris currB=Determine(currBotColor, currTypeForColor[currBotColor]);
-	Tetris enemyB=Determine(enemyColor, currTypeForColor[enemyColor]);
+	Tetris currB=Determine(currBotColor, currTypeForColor[currBotColor],currBotColor);
+	Tetris enemyB=Determine(enemyColor, currTypeForColor[enemyColor],currBotColor);
 	
 	Util::backup();
 	
 	currB.place(); enemyB.place();
 	Util::eliminate(0);
 	Util::eliminate(1);
-	int tmp=Util::transfer();
+	Util::transfer();
 	
-	if (!tmp) WorstDetermine(enemyColor); else
-	{
-		int maxCount = 0, minCount = 99;
-		rep(type, 0, 6)
-		{
-			if (typeCountForColor[enemyColor][type] > maxCount)
-				maxCount = typeCountForColor[enemyColor][type];
-			if (typeCountForColor[enemyColor][type] < minCount)
-				minCount = typeCountForColor[enemyColor][type];
-		}
-		
-		rep(type, 0, 6) if (typeCountForColor[enemyColor][type] != maxCount || maxCount - minCount != 2) 
-		{
-			blockForEnemy=type;
-			break;
-		}
-	}
-	
-	blockForEnemy = WorstDetermine(enemyColor);
+	WorstDetermine(enemyColor);
 	
 	Util::recover();
 	
-	finalX=currB.blockX, finalY=currB.blockY, finalO=currB.orientation;
+	typePosX=currB.blockX, typePosY=currB.blockY, typePosO=currB.orientation;
+}
+
+inline int TestCanPlace()
+{
+	int fg=0;
+	
+	Tetris block0(currTypeForColor[0],0);
+	rep(x, 1, MAPWIDTH) rep(y, MAPHEIGHT-3, MAPHEIGHT) rep(o, 0, 3) if (block0.set(x,y,o).onTop()) fg|=1;
+	Tetris block1(currTypeForColor[1],1);
+	rep(x, 1, MAPWIDTH) rep(y, MAPHEIGHT-3, MAPHEIGHT) rep(o, 0, 3) if (block1.set(x,y,o).onTop()) fg|=2;
+	
+	fg^=3; if (fg==3 && elimTotal[0]!=elimTotal[1]) fg=(elimTotal[0]<elimTotal[1]?1:2);
+	
+	return fg;
+}
+
+
+
+
  
-	// 决策结束，输出结果（你只需修改以上部分）
+int main()
+{
+	GetNer(0); GetNer(1); freopen("con", "r", stdin);
+
+	istream::sync_with_stdio(false);
+	srand(time(NULL)); printf("%lld\n", time(NULL));
+	//srand(1508691595);
+	Util::init(); // 围护城河
+	
+	blockType = rand()%7;
+	nextTypeForColor[0] = blockType;
+	nextTypeForColor[1] = blockType;
+	typeCountForColor[0][blockType]++;
+	typeCountForColor[1][blockType]++;
+	
+	int turnID = 0; while (++turnID)
+	{
+		currTypeForColor[0] = nextTypeForColor[0];
+		currTypeForColor[1] = nextTypeForColor[1];
+		
+		if ((ED=TestCanPlace())) goto Final;
  
-	cout << blockForEnemy << " " << finalX << " " << finalY << " " << finalO;
+		// 先读自己的输出，也就是自己的行为
+		// 自己的输出是自己的最后一步
+		// 然后模拟最后一步放置块
+		PlayerAction(0);
+ 
+		// 我当时把上一块落到了 x y o！
+		Tetris myBlock(currTypeForColor[0], 0);
+		myBlock.set(typePosX, typePosY, typePosO).place();
+ 
+		// 我给对方什么块来着？
+		typeCountForColor[1][blockForEnemy]++;
+		nextTypeForColor[1] = blockForEnemy;
+ 
+		// 然后读自己的输入，也就是对方的行为
+		// 裁判给自己的输入是对方的最后一步
+		PlayerAction(1);
+ 
+		// 对方当时把上一块落到了 x y o！
+		Tetris enemyBlock(currTypeForColor[1], 1);
+		enemyBlock.set(typePosX, typePosY, typePosO).place();
+ 
+		// 对方给我什么块来着？
+		typeCountForColor[0][blockForEnemy]++;
+		nextTypeForColor[0] = blockForEnemy;
+ 
+		// 检查消去
+		Util::eliminate(0);
+		Util::eliminate(1);
+ 
+		// 进行转移
+		if ((ED=Util::transfer())) goto Final;
+		
+		
+	}
+	
+	//freopen("result.txt", "w", stdout);
+	Final:if (ED==1) puts("Right Win!");
+	if (ED==2) puts("Left Win!");
+	if (ED==3) puts("No one win. QwQ");
+	system("pause");
+	//fclose(stdout);
  
 	return 0;
 }

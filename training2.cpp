@@ -96,7 +96,7 @@ inline void Death(int a)
 
 
 
-int initbot[10009], tot;
+int initbot[1000009], tot;
 
 inline void OutputNer(int a) 
 {
@@ -130,7 +130,7 @@ inline void InputNer(int a)
 	scanf("%d", &Ner[v[a]].ActType);
 }
 
-char s[10009];
+char s[1000009];
 inline void InputData()
 {
 	char filename[16]="data\\train2.txt";
@@ -177,6 +177,35 @@ inline void Game(int player0, int player1)
 	}
 }
 
+inline void OutputSomething()
+{
+	puts("Alive:");
+	rep(i, 1, NerNum) printf("%d%c", v[i], i==NerNum?'\n':'\t');
+	rep(i, 1, NerNum) printf("%d%c", hp[i], i==NerNum?'\n':'\t');
+	puts("");
+	
+	if (tot>=1000)
+	{
+		int sum=0;
+		rep(i, tot-1000+1, tot) sum+=initbot[i];
+		printf("recent 1000: %.0lf%%\n", (1.0*sum/1000)/2*100);
+	}
+	if (tot>=200)
+	{
+		int sum=0;
+		rep(i, tot-200+1, tot) sum+=initbot[i];
+		printf("recent 200: %.0lf%%\n", (1.0*sum/200)/2*100);
+	}
+	if (tot>=50)
+	{
+		int sum=0;
+		rep(i, tot-50+1, tot) sum+=initbot[i];
+		printf("recent 50: %.0lf%%\n", (1.0*sum/50)/2*100);
+		Test50=(int)((1.0*sum/50)/4*10);
+		puts("");
+	}
+}
+
 int TIM=0;
 int main()
 {
@@ -201,37 +230,12 @@ int main()
 			
 			freopen("con", "w", stdout);
 			
-			puts("Alive:");
-			rep(i, 1, NerNum) printf("%d%c", v[i], i==NerNum?'\n':'\t');
-			rep(i, 1, NerNum) printf("%d%c", hp[i], i==NerNum?'\n':'\t');
-			puts("");
+			OutputSomething();
 			
-			if (tot>=100)
-			{
-				int sum=0;
-				rep(i, tot-100+1, tot) sum+=initbot[i];
-				printf("recent 100: %.0lf%%\n", (1.0*sum/100)/2*100);
-			}
-			if (tot>=50)
-			{
-				int sum=0;
-				rep(i, tot-50+1, tot) sum+=initbot[i];
-				printf("recent 50: %.0lf%%\n", (1.0*sum/50)/2*100);
-				Test50=(int)((1.0*sum/50)/4*10);
-			}
-			if (tot>=20)
-			{
-				int sum=0;
-				rep(i, tot-20+1, tot) sum+=initbot[i];
-				printf("recent 20: %.0lf%%\n", (1.0*sum/20)/2*100);
-			}
-			if (tot>=10)
-			{
-				int sum=0;
-				rep(i, tot-10+1, tot) sum+=initbot[i];
-				printf("recent 10: %.0lf%%\n", (1.0*sum/10)/2*100);
-				puts("");
-			}
+			freopen("data\\history.txt", "a", stdout);
+			
+			OutputSomething();
+			
 		}
 	}
 	

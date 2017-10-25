@@ -670,9 +670,25 @@ inline void PlayerAction(int currBotColor)
 	currB.place(); enemyB.place();
 	Util::eliminate(0);
 	Util::eliminate(1);
-	Util::transfer();
+	int tmp=Util::transfer();
 	
-	WorstDetermine(enemyColor);
+	if (!tmp) WorstDetermine(enemyColor); else
+	{
+		int maxCount = 0, minCount = 99;
+		rep(type, 0, 6)
+		{
+			if (typeCountForColor[enemyColor][type] > maxCount)
+				maxCount = typeCountForColor[enemyColor][type];
+			if (typeCountForColor[enemyColor][type] < minCount)
+				minCount = typeCountForColor[enemyColor][type];
+		}
+		
+		rep(type, 0, 6) if (typeCountForColor[enemyColor][type] != maxCount || maxCount - minCount != 2) 
+		{
+			blockForEnemy=type;
+			break;
+		}
+	}
 	
 	Util::recover();
 	
