@@ -96,8 +96,6 @@ inline void Death(int a)
 
 
 
-int initbot[1000009], tot;
-
 inline void OutputNer(int a) 
 {
 	rep(i, 0, NerM-1) printf("%.9lf%c", Ner[v[a]].weight[i], i==NerM-1?'\n':' ');
@@ -114,9 +112,6 @@ inline void OutputData()
 	
 	freopen(filename, "w", stdout);
 	rep(o, 1, NerNum) printf("%d %d\n", v[o], hp[o]), OutputNer(o);
-	printf("%d\n", tot);
-	rep(i, 1, tot) putchar(initbot[i]+'0');
-	puts("");
 	fclose(stdout);
 }
 
@@ -130,21 +125,17 @@ inline void InputNer(int a)
 	scanf("%d", &Ner[v[a]].ActType);
 }
 
-char s[1000009];
 inline void InputData()
 {
 	char filename[16]="data\\train2.txt";
 	
 	freopen(filename, "r", stdin);
 	rep(o, 1, NerNum) InputNer(o);
-	scanf("%d%s", &tot, s);
-	rep(i, 1, tot) initbot[i]=s[i-1]-'0';
 	fclose(stdin);
 	
 	NerCnt=v[NerNum];
 }
 
-int Test50=1;
 inline void Game(int player0, int player1)
 {
 	freopen("player0.txt", "w", stdout);
@@ -162,19 +153,8 @@ inline void Game(int player0, int player1)
 	scanf("%d", &Result);
 	fclose(stdin);
 	
-	if (player0 && player1)
-	{
-		if (Result>0) hp[player0]+=1, hp[player1]-=2;
-		if (Result<0) hp[player0]-=2, hp[player1]+=1;
-	}
-	else
-	{
-		if (!player0) swap(player0, player1), Result*=-1;
-		initbot[++tot]=Result+1;
-		if (Result>0) hp[player0]+=5-Test50;
-		if (Result<0) hp[player0]-=Test50;
-		
-	}
+	if (Result>0) hp[player0]+=1, hp[player1]-=2;
+	if (Result<0) hp[player0]-=2, hp[player1]+=1;
 }
 
 inline void OutputSomething()
@@ -183,27 +163,6 @@ inline void OutputSomething()
 	rep(i, 1, NerNum) printf("%d%c", v[i], i==NerNum?'\n':'\t');
 	rep(i, 1, NerNum) printf("%d%c", hp[i], i==NerNum?'\n':'\t');
 	puts("");
-	
-	if (tot>=1000)
-	{
-		int sum=0;
-		rep(i, tot-1000+1, tot) sum+=initbot[i];
-		printf("recent 1000: %.0lf%%\n", (1.0*sum/1000)/2*100);
-	}
-	if (tot>=200)
-	{
-		int sum=0;
-		rep(i, tot-200+1, tot) sum+=initbot[i];
-		printf("recent 200: %.0lf%%\n", (1.0*sum/200)/2*100);
-	}
-	if (tot>=50)
-	{
-		int sum=0;
-		rep(i, tot-50+1, tot) sum+=initbot[i];
-		printf("recent 50: %.0lf%%\n", (1.0*sum/50)/2*100);
-		Test50=(int)((1.0*sum/50)/4*10);
-		puts("");
-	}
 }
 
 int TIM=0;
@@ -212,17 +171,13 @@ int main()
 	srand(time(NULL));
 	
 	int tmp; scanf("%d", &tmp);
-	if (tmp) InputData(); else rep(i, 1, NerNum) NeuronInit(i); Ner[0].ActType=-1;
+	if (tmp) InputData(); else rep(i, 1, NerNum) NeuronInit(i);
 	
 	int TIM=0; while (NerCnt<=MaxNerNum)
 	{
 		int A=0, B=0;
-		while (A==B)
-		{
-			A=rand()%(NerNum+OPNum), B=rand()%(NerNum+OPNum);
-			if (!min(A,B) && max(A,B)>6) A=B=0;
-		}
-		Game(A,B); if (A && hp[A]<=0) Death(A); if (B && hp[B]<=0) Death(B);
+		while (A==B) A=rand()%NerNum+1, B=rand()%NerNum+1;
+		Game(A,B); if (hp[A]<=0) Death(A); if (hp[B]<=0) Death(B);
 		
 		TIM++; if (TIM%10==0)
 		{
@@ -235,7 +190,6 @@ int main()
 			freopen("data\\history.txt", "a", stdout);
 			
 			OutputSomething();
-			
 		}
 	}
 	
