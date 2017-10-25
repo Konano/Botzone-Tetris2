@@ -768,7 +768,6 @@ int main()
 	if (ED==3) puts("No one win. QwQ");
 	system("pause");
 	//fclose(stdout);
-	return 0;
  
 	return 0;
 }

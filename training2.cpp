@@ -35,7 +35,7 @@ typedef unsigned long long ull;
 #define NerN 11
 #define NerNum 10
 #define OPNum 1
-#define HPinit 20
+#define HPinit 30
 #define MaxNerNum 20000
 
 
@@ -142,8 +142,6 @@ inline void InputData()
 	NerCnt=v[NerNum];
 }
 
-int Lwin, Rwin;
-
 inline int Game(int player0, int player1)
 {
 	freopen("player0.txt", "w", stdout);
@@ -161,8 +159,8 @@ inline int Game(int player0, int player1)
 	scanf("%d", &Result);
 	fclose(stdin);
 	
-	if (Result>0) hp[player0]+=1, hp[player1]-=2, Lwin++;
-	if (Result<0) hp[player0]-=2, hp[player1]+=1, Rwin++;
+	if (Result>0) hp[player0]+=2, hp[player1]-=3;
+	if (Result<0) hp[player0]-=3, hp[player1]+=2;
 	
 	return Result;
 }
@@ -172,7 +170,6 @@ inline void OutputSomething()
 	puts("Alive:");
 	rep(i, 1, NerNum) printf("%d%c", v[i], i==NerNum?'\n':'\t');
 	rep(i, 1, NerNum) printf("%d%c", hp[i], i==NerNum?'\n':'\t');
-	printf("%.5lf\n", 1.0*Lwin/(Lwin+Rwin));
 	puts("");
 }
 
