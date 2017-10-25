@@ -462,13 +462,13 @@ namespace Util
 
 
 
-//#define NerM 433
-#define NerN 9
+#define NerM 11
+#define NerN 8
 
 struct Neuron
 {
 	int ActType;
-	double weight[NerN], b0[NerN], theta[NerN];
+	double weight[NerM], b0[NerN], theta[NerN];
 } Ner[2];
 
 inline void GetNer(int a)
@@ -478,7 +478,7 @@ inline void GetNer(int a)
 	filename[6]='0'+a;
 	freopen(filename, "r", stdin);
 	
-	rep(i, 0, NerN-1) scanf("%lf", &Ner[a].weight[i]);
+	rep(i, 0, NerM-1) scanf("%lf", &Ner[a].weight[i]);
 	rep(i, 0, NerN-1) scanf("%lf", &Ner[a].b0[i]);
 	rep(i, 0, NerN-1) scanf("%lf", &Ner[a].theta[i]);
 	scanf("%d", &Ner[a].ActType);
@@ -551,9 +551,9 @@ inline double Value(int color, int NerID)
 	double ave=0; rep(i, 2, MAPWIDTH) ave+=h[i]; ave/=(MAPWIDTH-1);
 	double sum=0; rep(i, 2, MAPWIDTH) sum+=(1.0*h[i]-ave)*(1.0*h[i]-ave); sum/=(MAPWIDTH-1);
 	z[1]=Ner[NerID].weight[1]*sum;
-	z[6]=Ner[NerID].weight[6]*eliminateNum;
-	z[7]=Ner[NerID].weight[7]*min(elimCombo[color],3);
-	z[8]=Ner[NerID].weight[8]*erodedPieceCellsMetric;
+	z[6]=Ner[NerID].weight[6+min(elimCombo[color],3)]*eliminateNum;
+	z[7]=Ner[NerID].weight[10]*erodedPieceCellsMetric;
+	
 	
 	rep(i, 0, NerN-1) z[i]+=Ner[NerID].b0[i];
 	rep(i, 0, NerN-1) Cal(z[i], Ner[NerID].ActType);
