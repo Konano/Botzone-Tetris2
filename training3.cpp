@@ -31,8 +31,8 @@ typedef pair<double,int> Pdi;
 typedef long double ld;
 typedef unsigned long long ull;
 
-#define NerM 433
-#define NerN 11
+//#define NerM 433
+#define NerN 9
 #define NerNum 10
 #define OPNum 1
 #define HPinit 30
@@ -48,40 +48,32 @@ inline double rand2(){return rand01()*2-1;}
 struct Neuron
 {
 	int ActType;
-	double weight[NerM], b0[NerN], theta[NerN], b1;
+	double weight[NerN], b0[NerN], theta[NerN];
 } Ner[MaxNerNum+9]; int NerCnt, v[19], hp[19];
 
 inline void NeuronInit(int a)
 {
 	v[a]=++NerCnt, hp[a]=HPinit;
-	rep(i, 0, NerM-1) Ner[v[a]].weight[i]=rand2();
-	rep(i, 0, NerN-1) Ner[v[a]].b0[i]=rand2(), Ner[v[a]].theta[i]=rand2();
-	Ner[v[a]].b1=rand2();
+	rep(i, 0, NerN-1) Ner[v[a]].weight[i]=rand2();
+	rep(i, 0, NerN-1) Ner[v[a]].b0[i]=rand2();
+	rep(i, 0, NerN-1) Ner[v[a]].theta[i]=rand2();
 	Ner[v[a]].ActType=rand()%8;
 }
 
 inline void NeuronVary(Neuron &a, double o)
 {
-	if (rand01()<o) a.ActType=rand()%8;
-	if (rand01()<o) a.b1=rand2();
+	rep(i, 0, NerN-1) if (rand01()<o) a.weight[i]=rand2();
 	rep(i, 0, NerN-1) if (rand01()<o) a.b0[i]=rand2();
 	rep(i, 0, NerN-1) if (rand01()<o) a.theta[i]=rand2();
-	rep(i, 0, NerM-1) if (rand01()<o) a.weight[i]=rand2();
+	if (rand01()<o) a.ActType=rand()%8;
 }
 
 inline void NeuronComb(Neuron &a, Neuron &b, Neuron &c, double o)
 {
-	int cnt=0;
-	c.weight[cnt]=(rand01()>o?a:b).weight[cnt], cnt++;
-	rep(i, 1, 5) for(int i=1,rd=rand01()>o; i<=4; i++) c.weight[cnt]=(rd?a:b).weight[cnt], cnt++;
-	rep(i, 1, 4) c.weight[cnt]=(rand01()>o?a:b).weight[cnt], cnt++;
-	for(int i=1,rd=rand01()>o; i<=3; i++) c.weight[cnt]=(rd?a:b).weight[cnt], cnt++;
-	rep(i, 1, 58) for(int j=1,rd=rand01()>o; j<=7; j++) c.weight[cnt]=(rd?a:b).weight[cnt], cnt++;
-	
-	rep(i, 0, NerN-1) c.b0[i]=(rand01()>o?a:b).b0[i];
-	rep(i, 0, NerN-1) c.theta[i]=(rand01()>o?a:b).theta[i];
-	c.b1=(rand01()>o?a:b).b1;
-	c.ActType=(rand01()>o?a:b).ActType;
+	rep(i, 0, NerN-1) c.weight[i]=(rand01()<o?a:b).weight[i];
+	rep(i, 0, NerN-1) c.b0[i]=(rand01()<o?a:b).b0[i];
+	rep(i, 0, NerN-1) c.theta[i]=(rand01()<o?a:b).theta[i];
+	c.ActType=(rand01()<o?a:b).ActType;
 }
 
 
@@ -104,17 +96,16 @@ inline void Death(int a)
 
 inline void OutputNer(int a) 
 {
-	rep(i, 0, NerM-1) printf("%.9lf%c", Ner[v[a]].weight[i], i==NerM-1?'\n':' ');
+	rep(i, 0, NerN-1) printf("%.9lf%c", Ner[v[a]].weight[i], i==NerN-1?'\n':' ');
 	rep(i, 0, NerN-1) printf("%.9lf%c", Ner[v[a]].b0[i], i==NerN-1?'\n':' ');
 	rep(i, 0, NerN-1) printf("%.9lf%c", Ner[v[a]].theta[i], i==NerN-1?'\n':' ');
-	printf("%.9lf\n", Ner[v[a]].b1);
 	printf("%d\n", Ner[v[a]].ActType);
 	puts("");
 }
 
 inline void OutputData()
 {
-	char filename[16]="data\\train2.txt";
+	char filename[16]="data\\train3.txt";
 	
 	freopen(filename, "w", stdout);
 	rep(o, 1, NerNum) printf("%d %d\n", v[o], hp[o]), OutputNer(o);
@@ -124,16 +115,15 @@ inline void OutputData()
 inline void InputNer(int a) 
 {
 	scanf("%d%d", &v[a], &hp[a]);
-	rep(i, 0, NerM-1) scanf("%lf", &Ner[v[a]].weight[i]);
+	rep(i, 0, NerN-1) scanf("%lf", &Ner[v[a]].weight[i]);
 	rep(i, 0, NerN-1) scanf("%lf", &Ner[v[a]].b0[i]);
 	rep(i, 0, NerN-1) scanf("%lf", &Ner[v[a]].theta[i]);
-	scanf("%lf", &Ner[v[a]].b1);
 	scanf("%d", &Ner[v[a]].ActType);
 }
 
 inline void InputData()
 {
-	char filename[16]="data\\train2.txt";
+	char filename[16]="data\\train3.txt";
 	
 	freopen(filename, "r", stdin);
 	rep(o, 1, NerNum) InputNer(o);
