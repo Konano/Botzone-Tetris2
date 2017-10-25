@@ -35,12 +35,12 @@ typedef unsigned long long ull;
 #define NerN 11
 #define NerNum 10
 #define OPNum 1
-#define HPinit 16
-#define MaxNerNum 10000
+#define HPinit 20
+#define MaxNerNum 20000
 
 
 
-inline double rand01(){return (1.0*rand()/RAND_MAX)+(1.0*rand()/RAND_MAX/RAND_MAX)+(1.0*rand()/RAND_MAX/RAND_MAX/RAND_MAX);}
+inline double rand01(){return (1.0*rand()/(RAND_MAX+1))+(1.0*rand()/(RAND_MAX+1)/(RAND_MAX+1))+(1.0*rand()/(RAND_MAX+1)/(RAND_MAX+1)/(RAND_MAX+1));}
 inline double rand2(){return rand01()*2-1;}
 
 
@@ -49,7 +49,7 @@ struct Neuron
 {
 	int ActType;
 	double weight[NerM], b0[NerN], theta[NerN], b1;
-} Ner[10009]; int NerCnt, v[19], hp[19];
+} Ner[MaxNerNum+9]; int NerCnt, v[19], hp[19];
 
 inline void NeuronInit(int a)
 {
@@ -62,11 +62,11 @@ inline void NeuronInit(int a)
 
 inline void NeuronVary(Neuron &a, double o)
 {
-	if (rand()%10<(int)o) a.ActType=rand()%8;
-	if (rand()%10<(int)o) a.b1=rand2();
-	while (rand()%(int)(o*NerN/10+1)) a.b0[rand()%NerN]=rand2();
-	while (rand()%(int)(o*NerN/10+1)) a.theta[rand()%NerN]=rand2();
-	while (rand()%(int)(o*NerM/10+1)) a.weight[rand()%NerM]=rand2();
+	if (rand01()<o) a.ActType=rand()%8;
+	if (rand01()<o) a.b1=rand2();
+	rep(i, 0, NerN-1) if (rand01()<o) a.b0[i]=rand2();
+	rep(i, 0, NerN-1) if (rand01()<o) a.theta[i]=rand2();
+	rep(i, 0, NerM-1) if (rand01()<o) a.weight[i]=rand2();
 }
 
 inline void NeuronComb(Neuron &a, Neuron &b, Neuron &c, double o)
@@ -91,7 +91,7 @@ inline void Death(int a)
 	rep(i, a+1, NerNum) swap(v[i-1], v[i]), swap(hp[i-1], hp[i]);
 	a=NerNum; v[a]=++NerCnt, hp[a]=HPinit;
 	NeuronComb(Ner[v[rand()%4+1]], Ner[v[rand()%4+1]], Ner[v[a]], 0.5+rand2()*0.2);
-	NeuronVary(Ner[v[a]], rand01()*2+1.1);
+	NeuronVary(Ner[v[a]], rand01()/10*3);
 }
 
 
