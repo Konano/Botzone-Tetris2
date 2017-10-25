@@ -150,6 +150,7 @@ inline int Game(int player0, int player1)
 	fclose(stdin);
 	
 	if (Result>0) hp[player0]+=2, hp[player1]-=3;
+	if (!Result) hp[player0]--, hp[player1]--;
 	if (Result<0) hp[player0]-=3, hp[player1]+=2;
 	
 	return Result;
