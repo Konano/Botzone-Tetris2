@@ -517,10 +517,10 @@ inline double Value(int color, int NerID)
 	while (tot)
 	{
 		int x=st[tot].fi, y=st[tot].se; tot--;
-		if (x>1) {if (gridInfo[color][y][x-1]) LK++; else if (!LKv[x-1][y]) st[++tot]=Pii(x-1,y), LKv[x-1][y]=true;}
-		if (y==1 || gridInfo[color][y-1][x]) LK++; else if (!LKv[x][y-1]) st[++tot]=Pii(x,y-1), LKv[x][y-1]=true;
-		if (x<MAPWIDTH) {if (gridInfo[color][y][x+1]) LK++; else if (!LKv[x+1][y]) st[++tot]=Pii(x+1,y), LKv[x+1][y]=true;}
-		if (y<MAPHEIGHT) {if (gridInfo[color][y+1][x]) LK++; else if (!LKv[x][y+1]) st[++tot]=Pii(x,y+1), LKv[x][y+1]=true;}
+		if (x==1 || gridInfo[color][y][x-1]) LK+=(y<h[x]); else if (!LKv[x-1][y]) st[++tot]=Pii(x-1,y), LKv[x-1][y]=true;
+		if (y==1 || gridInfo[color][y-1][x]) LK+=(y<h[x]); else if (!LKv[x][y-1]) st[++tot]=Pii(x,y-1), LKv[x][y-1]=true;
+		if (x==MAPWIDTH || gridInfo[color][y][x+1]) LK+=(y<h[x]); else if (!LKv[x+1][y]) st[++tot]=Pii(x+1,y), LKv[x+1][y]=true;
+		if (y==MAPHEIGHT || gridInfo[color][y+1][x]) LK+=(y<h[x]); else if (!LKv[x][y+1]) st[++tot]=Pii(x,y+1), LKv[x][y+1]=true;
 	}
 	z[2]=Ner[NerID].weight[2]*LK;
 	
