@@ -31,8 +31,8 @@ typedef pair<double,int> Pdi;
 typedef long double ld;
 typedef unsigned long long ull;
 
-#define NerM 11
-#define NerN 8
+#define NerM 12
+#define NerN 9
 #define NerNum 20
 #define OPNum 1
 #define HPinit 30
@@ -179,7 +179,7 @@ int main()
 		while (A==B) A=rand()%NerNum+1, B=rand()%NerNum+1;
 		Game(A,B); if (hp[A]<=0) Death(A); if (hp[B]<=0) Death(B);
 		
-		TIM++; if (TIM%NerNum==0)
+		TIM++; if (TIM%1==0)
 		{
 			OutputData();
 			
