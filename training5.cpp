@@ -31,8 +31,8 @@ typedef pair<double,int> Pdi;
 typedef long double ld;
 typedef unsigned long long ull;
 
-#define NerM 12
-#define NerN 9
+#define NerM 17
+#define NerN 14
 #define NerNum 20
 #define OPNum 1
 #define HPinit 30
@@ -81,16 +81,16 @@ inline void NeuronComb(Neuron &a, Neuron &b, Neuron &c, double o)
 
 inline void Death(int a)
 {
-	rep(i, a+1, NerNum) swap(v[i-1], v[i]), swap(hp[i-1], hp[i]);
-	a=NerNum; v[a]=++NerCnt, hp[a]=HPinit;
-	NeuronComb(Ner[v[rand()%8+1]], Ner[v[rand()%8+1]], Ner[v[a]], 0.5+rand2()*0.2);
-	NeuronVary(Ner[v[a]], rand01()/5);
-	
-	while (NerCnt%100==v[1]%100)
+	while ((NerCnt+1)%100==v[1]%100)
 	{
 		rep(i, 2, NerNum) swap(v[i-1], v[i]), swap(hp[i-1], hp[i]);
 		hp[NerNum]=min(hp[NerNum], HPinit*2);
 	}
+	
+	rep(i, a+1, NerNum) swap(v[i-1], v[i]), swap(hp[i-1], hp[i]);
+	a=NerNum; v[a]=++NerCnt, hp[a]=HPinit;
+	NeuronComb(Ner[v[rand()%4+1]], Ner[v[rand()%4+1]], Ner[v[a]], 0.5+rand2()*0.2);
+	NeuronVary(Ner[v[a]], rand01()/5);
 }
 
 
@@ -179,7 +179,7 @@ int main()
 		while (A==B) A=rand()%NerNum+1, B=rand()%NerNum+1;
 		Game(A,B); if (hp[A]<=0) Death(A); if (hp[B]<=0) Death(B);
 		
-		TIM++; if (TIM%1==0)
+		TIM++; if (TIM%NerNum==0)
 		{
 			OutputData();
 			

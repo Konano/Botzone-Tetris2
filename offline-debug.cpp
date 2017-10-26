@@ -465,8 +465,8 @@ namespace Util
 
 
 
-#define NerM 11
-#define NerN 8
+#define NerM 12
+#define NerN 9
 
 struct Neuron
 {
@@ -502,61 +502,110 @@ inline double Cal(double x, int type)
 	return 0;
 }
 
-Pii st[309]; bool LKv[MAPWIDTH+2][MAPHEIGHT+2]; int h[MAPWIDTH+2];
+int initLK, initBlankCount, initBlankBig, initBlankSum;
+
+Pii st[309]; bool v[MAPWIDTH+2][MAPHEIGHT+2]; int h[MAPWIDTH+2];
+
+inline int Hmax(int color)
+{
+	int H=0; clr(h,0);
+	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (gridInfo[color][y][x]) h[x]=max(h[x],y), H=max(H,y);
+	return H;
+}
+
+inline int LK(int color)
+{
+	clr(v,0); int tot=0, Ans=0;
+	rep(x, 1, MAPWIDTH) if (!gridInfo[color][MAPHEIGHT][x]) st[++tot]=Pii(x,MAPHEIGHT), v[x][MAPHEIGHT]=true;
+	while (tot)
+	{
+		int x=st[tot].fi, y=st[tot].se; tot--;
+		if (x==1 || gridInfo[color][y][x-1]) Ans+=(y<h[x]); else if (!v[x-1][y]) st[++tot]=Pii(x-1,y), v[x-1][y]=true;
+		if (y==1 || gridInfo[color][y-1][x]) Ans+=(y<h[x]); else if (!v[x][y-1]) st[++tot]=Pii(x,y-1), v[x][y-1]=true;
+		if (x==MAPWIDTH || gridInfo[color][y][x+1]) Ans+=(y<h[x]); else if (!v[x+1][y]) st[++tot]=Pii(x+1,y), v[x+1][y]=true;
+		if (y==MAPHEIGHT || gridInfo[color][y+1][x]) Ans+=(y<h[x]); else if (!v[x][y+1]) st[++tot]=Pii(x,y+1), v[x][y+1]=true;
+	}
+	return Ans;
+}
+
+inline int BlankCount(int color)
+{
+	int Ans=0;
+	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (!gridInfo[color][y][x] && y<h[x]) Ans+=v[x][y]?1:2;
+	return Ans;
+}
+
+inline Pii BlankBig(int color)
+{
+	int BlankBig=0, BlankSum=0, tot=0;
+	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (!gridInfo[color][y][x] && !v[x][y])
+	{
+		st[tot=1]=Pii(x,y), v[x][y]=true, BlankBig++; int tmp=h[x]-y;
+		while (tot)
+		{
+			int x=st[tot].fi, y=st[tot].se; tot--; tmp=min(tmp, h[x]-y);
+			if (x>1 && !gridInfo[color][y][x-1] && !v[x-1][y]) 
+				st[++tot]=Pii(x-1,y), v[x-1][y]=true;
+			if (y>1 && !gridInfo[color][y-1][x] && !v[x][y-1]) 
+				st[++tot]=Pii(x,y-1), v[x][y-1]=true;
+			if (x<MAPWIDTH && !gridInfo[color][y][x+1] && !v[x+1][y]) 
+				st[++tot]=Pii(x+1,y), v[x+1][y]=true;
+			if (y<MAPHEIGHT && !gridInfo[color][y+1][x] && !v[x][y+1]) 
+				st[++tot]=Pii(x,y+1), v[x][y+1]=true;
+		}
+		BlankSum+=tmp;
+	}
+	return Pii(BlankBig, BlankSum);
+}
+
+int CanA, CanB;
+
+inline void Test2(int a, int b, int o)
+{
+	rep(x, 1, MAPWIDTH-1) if (max(h[x]-a,h[x+1]-b)+o<=MAPHEIGHT) 
+		CanB+=(h[x]-a==h[x+1]-b), CanA=min(CanA, abs((h[x]-a)-(h[x+1]-b)));
+}
+inline int max3(int a, int b, int c){return a>b?max(a,c):max(b,c);}
+inline void Test3(int a, int b, int c, int o)
+{
+	int tmp;
+	rep(x, 1, MAPWIDTH-2) if ((tmp=max3(h[x]-a,h[x+1]-b,h[x+2]-c))+o<=MAPHEIGHT) 
+		CanB+=(h[x]-a==h[x+1]-b && h[x+1]-b==h[x+2]-c), CanA=min(CanA, (tmp+a-h[x])+(tmp+b-h[x+1])+(tmp+c-h[x+2]));
+}
+inline Pii CanPlace(int color, int type)
+{
+	clr(h,0); rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (gridInfo[color][y][x]) h[x]=max(h[x],y);
+	CanA=100, CanB=0;
+	
+	if (type==0) Test2(0,0,2), Test2(2,0,2), Test3(0,0,0,1), Test3(0,1,1,1);
+	if (type==1) Test2(0,0,2), Test2(0,2,2), Test3(0,0,0,1), Test3(1,1,0,1);
+	if (type==2) Test2(1,0,2), Test3(0,0,1,1);
+	if (type==3) Test2(0,1,2), Test3(1,0,0,1);
+	if (type==4) Test2(1,0,2), Test2(0,1,2), Test3(0,0,0,1), Test3(1,0,1,1);
+	if (type==6) Test2(0,0,1);
+	
+	return Pii(CanA,CanB);
+}
 
 inline double Value(int color, int NerID)
 {
 	//Util::printField();
 	
-	double z[NerN]; clr(z,0); int H=0; clr(h,0); 
-	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (gridInfo[color][y][x]) h[x]=max(h[x],y), H=max(H,y);
-	z[0]=Ner[NerID].weight[0]*H;
+	double z[NerN];
 	
-	clr(LKv,0); int tot=0, LK=0;
-	rep(x, 1, MAPWIDTH) if (!gridInfo[color][MAPHEIGHT][x]) 
-		st[++tot]=Pii(x,MAPHEIGHT), LKv[x][MAPHEIGHT]=true; 
-	else 
-		LK++;
-	while (tot)
-	{
-		int x=st[tot].fi, y=st[tot].se; tot--;
-		if (x==1 || gridInfo[color][y][x-1]) LK+=(y<h[x]); else if (!LKv[x-1][y]) st[++tot]=Pii(x-1,y), LKv[x-1][y]=true;
-		if (y==1 || gridInfo[color][y-1][x]) LK+=(y<h[x]); else if (!LKv[x][y-1]) st[++tot]=Pii(x,y-1), LKv[x][y-1]=true;
-		if (x==MAPWIDTH || gridInfo[color][y][x+1]) LK+=(y<h[x]); else if (!LKv[x+1][y]) st[++tot]=Pii(x+1,y), LKv[x+1][y]=true;
-		if (y==MAPHEIGHT || gridInfo[color][y+1][x]) LK+=(y<h[x]); else if (!LKv[x][y+1]) st[++tot]=Pii(x,y+1), LKv[x][y+1]=true;
-	}
-	z[2]=Ner[NerID].weight[2]*LK;
-	
-	int Blank=0, BlankBig=0, BlankSum=0, tmp;
-	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (!gridInfo[color][y][x] && !LKv[x][y])
-	{
-		st[tot=1]=Pii(x,y), LKv[x][y]=true, BlankBig++, tmp=h[x]-y;
-		while (tot)
-		{
-			Blank++; tmp=min(tmp, h[x]-y);
-			int x=st[tot].fi, y=st[tot].se; tot--;
-			if (x>1 && !gridInfo[color][y][x-1] && !LKv[x-1][y]) 
-				st[++tot]=Pii(x-1,y), LKv[x-1][y]=true;
-			if (y>1 && !gridInfo[color][y-1][x] && !LKv[x][y-1]) 
-				st[++tot]=Pii(x,y-1), LKv[x][y-1]=true;
-			if (x<MAPWIDTH && !gridInfo[color][y][x+1] && !LKv[x+1][y]) 
-				st[++tot]=Pii(x+1,y), LKv[x+1][y]=true;
-			if (y<MAPHEIGHT && !gridInfo[color][y+1][x] && !LKv[x][y+1]) 
-				st[++tot]=Pii(x,y+1), LKv[x][y+1]=true;
-		}
-		BlankSum+=tmp;
-	}
-	z[3]=Ner[NerID].weight[3]*Blank;
-	z[4]=Ner[NerID].weight[4]*BlankBig;
-	z[5]=Ner[NerID].weight[5]*BlankSum;
-	
-	sort(h+1, h+1+MAPWIDTH);
-	double ave=0; rep(i, 2, MAPWIDTH) ave+=h[i]; ave/=(MAPWIDTH-1);
-	double sum=0; rep(i, 2, MAPWIDTH) sum+=(1.0*h[i]-ave)*(1.0*h[i]-ave); sum/=(MAPWIDTH-1);
-	z[1]=Ner[NerID].weight[1]*sum;
-	z[6]=Ner[NerID].weight[6+min(elimCombo[color],3)]*eliminateNum;
-	z[7]=Ner[NerID].weight[10]*erodedPieceCellsMetric;
-	
+	int a=Hmax(color); 
+	z[0]=Ner[NerID].weight[0]*a*a;
+	z[1]=Ner[NerID].weight[1]*(LK(color)-initLK);
+	z[2]=Ner[NerID].weight[2]*(BlankCount(color)-initBlankCount);
+	Pii tmp=BlankBig(color);
+	z[3]=Ner[NerID].weight[3]*(tmp.first-initBlankBig);
+	z[4]=Ner[NerID].weight[4]*(tmp.second-initBlankSum);
+	z[5]=Ner[NerID].weight[5+min(elimCombo[color],3)]*eliminateNum;
+	z[6]=Ner[NerID].weight[9]*erodedPieceCellsMetric;
+	int mn0=-100, mn1=100;
+	rep(i, 0, 6) if (i!=5) tmp=CanPlace(color,i), mn0=max(tmp.first,mn0), mn1=min(tmp.second,mn1);
+	z[7]=Ner[NerID].weight[10]*mn0;
+	z[8]=Ner[NerID].weight[11]*mn1;
 	
 	rep(i, 0, NerN-1) z[i]+=Ner[NerID].b0[i];
 	rep(i, 0, NerN-1) Cal(z[i], Ner[NerID].ActType);
@@ -567,15 +616,15 @@ inline double Value(int color, int NerID)
 }
 
 /*
-Hmax
-H方差（除去最低一个）
-轮廓线
-洞数量
-洞联通块数量
-距离封顶max
-消除行
-连续几回合
+Hmax^2
+轮廓线（相对变化）
+洞数量（相对变化）虚+实
+洞联通块数量（相对变化）
+距离封顶max（相对变化）
+消除行 - 连续几回合
 本方块在消除行的个数
+可放置情况 max(min())
+可放置个数 min()
 */
 
 
