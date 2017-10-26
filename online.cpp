@@ -433,13 +433,13 @@ namespace Util
 }
 
 
-#define NerM 433
-#define NerN 11
+#define NerM 11
+#define NerN 8
 
 struct Neuron
 {
 	int ActType;
-	double weight[NerM], b0[NerN], theta[NerN], b1;
+	double weight[NerM], b0[NerN], theta[NerN];
 } Ner;
 
 inline void GetNer()
@@ -456,7 +456,7 @@ inline void GetNer()
 	rep(i, 0, NerM-1) scanf("%lf", &Ner.weight[i]);
 	rep(i, 0, NerN-1) scanf("%lf", &Ner.b0[i]);
 	rep(i, 0, NerN-1) scanf("%lf", &Ner.theta[i]);
-	scanf("%lf%d", &Ner.b1, &Ner.ActType);
+	scanf("%d", &Ner.ActType);
 	
 	fclose(stdin);
 }
@@ -474,63 +474,80 @@ inline double Cal(double x, int type)
 	return 0;
 }
 
-Pii st[209]; bool LKv[MAPWIDTH+2][MAPHEIGHT+2]; int h[MAPWIDTH+2], d[58];
+Pii st[309]; bool LKv[MAPWIDTH+2][MAPHEIGHT+2]; int h[MAPWIDTH+2];
 
 inline double Value(int color)
 {
-	int a[20]; clr(a,0); clr(h,0);
+	//Util::printField();
 	
-	clr(LKv,0);
-	int tot=0, LK=0, H=0; rep(x, 1, MAPWIDTH) if (!gridInfo[color][MAPHEIGHT][x]) 
+	double z[NerN]; clr(z,0); int H=0; clr(h,0); 
+	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (gridInfo[color][y][x]) h[x]=max(h[x],y), H=max(H,y);
+	z[0]=Ner.weight[0]*H;
+	
+	clr(LKv,0); int tot=0, LK=0;
+	rep(x, 1, MAPWIDTH) if (!gridInfo[color][MAPHEIGHT][x]) 
 		st[++tot]=Pii(x,MAPHEIGHT), LKv[x][MAPHEIGHT]=true; 
 	else 
 		LK++;
 	while (tot)
 	{
 		int x=st[tot].fi, y=st[tot].se; tot--;
-		if (x>1) {if (gridInfo[color][y][x-1]) LK++; else if (!LKv[x-1][y]) st[++tot]=Pii(x-1,y), LKv[x-1][y]=true;}
-		if (y>1) {if (gridInfo[color][y-1][x]) LK++; else if (!LKv[x][y-1]) st[++tot]=Pii(x,y-1), LKv[x][y-1]=true;}
-		if (x<MAPWIDTH) {if (gridInfo[color][y][x+1]) LK++; else if (!LKv[x+1][y]) st[++tot]=Pii(x+1,y), LKv[x+1][y]=true;}
-		if (y<MAPHEIGHT) {if (gridInfo[color][y+1][x]) LK++; else if (!LKv[x][y+1]) st[++tot]=Pii(x,y+1), LKv[x][y+1]=true;}
+		if (x==1 || gridInfo[color][y][x-1]) LK+=(y<h[x]); else if (!LKv[x-1][y]) st[++tot]=Pii(x-1,y), LKv[x-1][y]=true;
+		if (y==1 || gridInfo[color][y-1][x]) LK+=(y<h[x]); else if (!LKv[x][y-1]) st[++tot]=Pii(x,y-1), LKv[x][y-1]=true;
+		if (x==MAPWIDTH || gridInfo[color][y][x+1]) LK+=(y<h[x]); else if (!LKv[x+1][y]) st[++tot]=Pii(x+1,y), LKv[x+1][y]=true;
+		if (y==MAPHEIGHT || gridInfo[color][y+1][x]) LK+=(y<h[x]); else if (!LKv[x][y+1]) st[++tot]=Pii(x,y+1), LKv[x][y+1]=true;
 	}
-	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (gridInfo[color][y][x]) H=max(H,y), h[x]=max(h[x],y); else if (!LKv[x][y]) a[y]++;
+	z[2]=Ner.weight[2]*LK;
 	
-	double z[NerN]; clr(z,0); int cnt=0;
-	z[0]=Ner.weight[cnt++]*H;
-	rep(i, 1, 19) z[1]+=Ner.weight[cnt++]*a[i];
-	z[2]=Ner.weight[cnt++]*LK;
-	z[3]+=Ner.weight[cnt++]*eliminateNum;
-	z[3]+=Ner.weight[cnt++]*min(elimCombo[color],3);
-	z[3]+=Ner.weight[cnt++]*erodedPieceCellsMetric;
-	
-	clr(d,0); rep(o, 1, 9) 
+	int Blank=0, BlankBig=0, BlankSum=0, tmp;
+	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (!gridInfo[color][y][x] && !LKv[x][y])
 	{
-		int mn=min(h[o],h[o+1]); bool fg=false;
-		rep(i, h[o+1]+1, h[o]) fg|=(!gridInfo[color][i][o]);
-		rep(i, h[o]+1, h[o+1]) fg|=(!gridInfo[color][i][o+1]);
-		if (!fg) d[LK2[min(h[o]-mn,5)][min(h[o+1]-mn,5)]]++;
+		st[tot=1]=Pii(x,y), LKv[x][y]=true, BlankBig++, tmp=h[x]-y;
+		while (tot)
+		{
+			Blank++; tmp=min(tmp, h[x]-y);
+			int x=st[tot].fi, y=st[tot].se; tot--;
+			if (x>1 && !gridInfo[color][y][x-1] && !LKv[x-1][y]) 
+				st[++tot]=Pii(x-1,y), LKv[x-1][y]=true;
+			if (y>1 && !gridInfo[color][y-1][x] && !LKv[x][y-1]) 
+				st[++tot]=Pii(x,y-1), LKv[x][y-1]=true;
+			if (x<MAPWIDTH && !gridInfo[color][y][x+1] && !LKv[x+1][y]) 
+				st[++tot]=Pii(x+1,y), LKv[x+1][y]=true;
+			if (y<MAPHEIGHT && !gridInfo[color][y+1][x] && !LKv[x][y+1]) 
+				st[++tot]=Pii(x,y+1), LKv[x][y+1]=true;
+		}
+		BlankSum+=tmp;
 	}
-	rep(o, 1, 8) 
-	{
-		int mn=min(min(h[o],h[o+1]),h[o+2]); bool fg=false;
-		rep(i, h[o+1]+1, h[o]) fg|=(!gridInfo[color][i][o]);
-		rep(i, min(h[o],h[o+2])+1, h[o+1]) fg|=(!gridInfo[color][i][o+1]);
-		rep(i, h[o+1]+1, h[o+2]) fg|=(!gridInfo[color][i][o+2]);
-		if (!fg) d[LK3[min(h[o]-mn,5)][min(h[o+1]-mn,5)][min(h[o+2]-mn,5)]]++;
-	}
-	rep(o, 1, 7) if (h[o]==h[o+1] && h[o+1]==h[o+2] && h[o+2]==h[o+3]) d[0]++;
+	z[3]=Ner.weight[3]*Blank;
+	z[4]=Ner.weight[4]*BlankBig;
+	z[5]=Ner.weight[5]*BlankSum;
 	
-	int mn=1000; rep(o, 0, 6) mn=min(mn, typeCountForColor[color][o]);
-	double dd[3]={Ner.weight[cnt+1],Ner.weight[cnt+2],Ner.weight[cnt+3]}; cnt+=3;
-	rep(o, 0, 6) rep(i, 0, LKnum) z[4+o]+=Ner.weight[cnt++]*d[i]*dd[2+mn-typeCountForColor[color][o]];
+	sort(h+1, h+1+MAPWIDTH);
+	double ave=0; rep(i, 2, MAPWIDTH) ave+=h[i]; ave/=(MAPWIDTH-1);
+	double sum=0; rep(i, 2, MAPWIDTH) sum+=(1.0*h[i]-ave)*(1.0*h[i]-ave); sum/=(MAPWIDTH-1);
+	z[1]=Ner.weight[1]*sum;
+	z[6]=Ner.weight[6+min(elimCombo[color],3)]*eliminateNum;
+	z[7]=Ner.weight[10]*erodedPieceCellsMetric;
 	
 	rep(i, 0, NerN-1) z[i]+=Ner.b0[i];
 	rep(i, 0, NerN-1) Cal(z[i], Ner.ActType);
-	double y=Ner.b1;
+	double y=0;
 	rep(i, 0, NerN-1) y+=z[i]*Ner.theta[i];
 	
 	return y;
 }
+
+/*
+Hmax
+H方差（除去最低一个）
+轮廓线
+洞数量
+洞联通块数量
+距离封顶max
+消除行
+连续几回合
+本方块在消除行的个数
+*/
 
 
 

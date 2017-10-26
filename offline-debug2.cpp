@@ -506,7 +506,7 @@ Pii st[309]; bool LKv[MAPWIDTH+2][MAPHEIGHT+2]; int h[MAPWIDTH+2];
 
 inline double Value(int color, int NerID)
 {
-	Util::printField();
+	//Util::printField();
 	
 	double z[NerN]; clr(z,0); int H=0; clr(h,0); 
 	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (gridInfo[color][y][x]) h[x]=max(h[x],y), H=max(H,y);
@@ -527,7 +527,7 @@ inline double Value(int color, int NerID)
 	}
 	z[2]=Ner[NerID].weight[2]*LK;
 	
-	int Blank=0, BlankBig=0, BlankTop=0, tmp;
+	int Blank=0, BlankBig=0, BlankSum=0, tmp;
 	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (!gridInfo[color][y][x] && !LKv[x][y])
 	{
 		st[tot=1]=Pii(x,y), LKv[x][y]=true, BlankBig++, tmp=h[x]-y;
@@ -544,11 +544,11 @@ inline double Value(int color, int NerID)
 			if (y<MAPHEIGHT && !gridInfo[color][y+1][x] && !LKv[x][y+1]) 
 				st[++tot]=Pii(x,y+1), LKv[x][y+1]=true;
 		}
-		BlankTop=max(BlankTop, tmp);
+		BlankSum+=tmp;
 	}
 	z[3]=Ner[NerID].weight[3]*Blank;
 	z[4]=Ner[NerID].weight[4]*BlankBig;
-	z[5]=Ner[NerID].weight[5]*BlankTop;
+	z[5]=Ner[NerID].weight[5]*BlankSum;
 	
 	sort(h+1, h+1+MAPWIDTH);
 	double ave=0; rep(i, 2, MAPWIDTH) ave+=h[i]; ave/=(MAPWIDTH-1);
