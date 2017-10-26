@@ -266,7 +266,7 @@ namespace Util
 			for (j = 1; j <= MAPWIDTH; j++)
 			{
 				if (gridInfo[color][i][j] == 0)
-					fullFlag = 0;
+					{fullFlag = 0;}
 				else
 					emptyFlag = 0;
 			}
@@ -554,36 +554,35 @@ inline Pii BlankBig(int color)
 	return Pii(BlankBig, BlankSum);
 }
 
-struct node{int x,y,o;};
-bool vis2[MAPWIDTH+2][MAPHEIGHT+2][4];
+int CanA, CanB;
+
+inline void Test2(int a, int b, int o)
+{
+	rep(x, 1, MAPWIDTH-1) if (max(h[x]-a,h[x+1]-b)+o<=MAPHEIGHT) 
+		CanB+=(h[x]-a==h[x+1]-b), CanA=min(CanA, abs((h[x]-a)-(h[x+1]-b)));
+}
+inline int max3(int a, int b, int c){return a>b?max(a,c):max(b,c);}
+inline void Test3(int a, int b, int c, int o)
+{
+	int tmp;
+	rep(x, 1, MAPWIDTH-2) if ((tmp=max3(h[x]-a,h[x+1]-b,h[x+2]-c))+o<=MAPHEIGHT) 
+		CanB+=(h[x]-a==h[x+1]-b && h[x+1]-b==h[x+2]-c), CanA=min(CanA, (tmp+a-h[x])+(tmp+b-h[x+1])+(tmp+c-h[x+2]));
+}
 inline Pii CanPlace(int color, int type)
 {
-	queue<node>q; clr(vis2,0); Tetris block(type, color);
-	Hmax(color); LK(color); int now=BlankCount(color), a=100, b=0;
+	Util::printField();
 	
-	rep(x, 1, MAPWIDTH) rep(y, MAPHEIGHT-3, MAPHEIGHT) rep(o, 0, 3) if (block.set(x,y,o).onTop())
-		vis2[x][y][o]=1, q.push((node){x,y,o});
+	clr(h,0); rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (gridInfo[color][y][x]) h[x]=max(h[x],y);
+	CanA=100, CanB=0;
 	
-	while (!q.empty())
-	{
-		int x=q.front().x, y=q.front().y, o=q.front().o; q.pop();
-		block.set(x,y,o);
-		if (block.moveleft() && !vis2[x-1][y][o]) vis2[x-1][y][o]=1, q.push((node){x-1,y,o});
-		if (block.moveright() && !vis2[x+1][y][o]) vis2[x+1][y][o]=1, q.push((node){x+1,y,o});
-		if (block.movedown() && !vis2[x][y-1][o]) vis2[x][y-1][o]=1, q.push((node){x,y-1,o});
-		rep(i, 0, 3) if (block.rotation(i) && !vis2[x][y][i]) vis2[x][y][i]=1, q.push((node){x,y,i});
-		
-		if (block.onGround())
-		{
-			Util::backup(); block.place(); Util::eliminate(color); // 消行，对方不加行
-			Hmax(color); LK(color); int tmp=BlankCount(color);
-			a=min(a, tmp-now); if (tmp<=now) b++;
-			Util::recover();
-		}
-	}
-	if (type==2 || type==3 || type==5) (b+=1)/=2;
-	if (type==6) (b+=3)/=4;
-	return Pii(a,b);
+	if (type==0) Test2(0,0,2), Test2(2,0,2), Test3(0,0,0,1), Test3(0,1,1,1);
+	if (type==1) Test2(0,0,2), Test2(0,2,2), Test3(0,0,0,1), Test3(1,1,0,1);
+	if (type==2) Test2(1,0,2), Test3(0,0,1,1);
+	if (type==3) Test2(0,1,2), Test3(1,0,0,1);
+	if (type==4) Test2(1,0,2), Test2(0,1,2), Test3(0,0,0,1), Test3(1,0,1,1);
+	if (type==6) Test2(0,0,1);
+	
+	return Pii(CanA,CanB);
 }
 
 inline double Value(int color, int NerID)
@@ -602,7 +601,7 @@ inline double Value(int color, int NerID)
 	z[5]=Ner[NerID].weight[5+min(elimCombo[color],3)]*eliminateNum;
 	z[6]=Ner[NerID].weight[9]*erodedPieceCellsMetric;
 	int mn0=-100, mn1=100;
-	rep(i, 0, 6) tmp=CanPlace(color,i), mn0=max(tmp.first,mn0), mn1=min(tmp.second,mn1);
+	rep(i, 0, 6) if (i!=5) tmp=CanPlace(color,i), mn0=max(tmp.first,mn0), mn1=min(tmp.second,mn1);
 	z[7]=Ner[NerID].weight[10]*mn0;
 	z[8]=Ner[NerID].weight[11]*mn1;
 	
@@ -636,6 +635,8 @@ Hmax^2
 int blockType, typePosX, typePosY, typePosO, blockForEnemy, nextTypeForColor[2], currTypeForColor[2];
 
 bool vis[MAPWIDTH+2][MAPHEIGHT+2][4];
+
+struct node{int x,y,o;};
 
 inline Tetris Determine(int currBotColor, int type, int NerColor)
 {
