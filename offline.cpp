@@ -31,6 +31,8 @@ typedef pair<double,int> Pdi;
 typedef long double ld;
 typedef unsigned long long ull;
 
+int ED;
+
 
 // 注意：x的范围是1~MAPWIDTH，y的范围是1~MAPHEIGHT
 // 数组是先行（y）后列（c）
@@ -38,8 +40,6 @@ typedef unsigned long long ull;
  
 #define MAPWIDTH 10
 #define MAPHEIGHT 20
-
-int ED;
  
 // 先y后x，记录地图状态，0为空，1为以前放置，2为刚刚放置，负数为越界
 // （2用于在清行后将最后一步撤销再送给对方）
@@ -122,7 +122,6 @@ public:
  
 	int color;
 	
- 
 	Tetris(int t, int color) : blockType(t), shape(blockShape[t]), color(color)
 	{ }
  
@@ -266,7 +265,7 @@ namespace Util
 			for (j = 1; j <= MAPWIDTH; j++)
 			{
 				if (gridInfo[color][i][j] == 0)
-					{fullFlag = 0;}
+					fullFlag = 0;
 				else
 					emptyFlag = 0;
 			}
@@ -416,21 +415,6 @@ namespace Util
 			typeCountForColor[o][i]=backupQueue[backupNum].typeCountForColor[o][i];
 	}
  
-	// 颜色方还能否继续游戏
-	/* inline bool canPut(int color, int blockType)
-	{
-		Tetris t(blockType, color);
-		for (int y = MAPHEIGHT; y >= 1; y--)
-			for (int x = 1; x <= MAPWIDTH; x++)
-				for (int o = 0; o < 4; o++)
-				{
-					t.set(x, y, o);
-					if (t.isValid() && checkDirectDropTo(color, blockType, x, y, o))
-						return true;
-				}
-		return false;
-	} */
- 
 	// 打印场地用于调试
 	inline void printField()
 	{
@@ -461,8 +445,8 @@ namespace Util
 
 
 
-#define NerM 17
-#define NerN 14
+#define NerM 23
+#define NerN 18
 
 struct Neuron
 {
@@ -525,10 +509,11 @@ inline int LK(int color)
 	return Ans;
 }
 
+bool pos[MAPHEIGHT+2];
 inline int BlankCount(int color)
 {
-	int Ans=0;
-	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (!gridInfo[color][y][x] && y<h[x]) Ans+=v[x][y]?1:2;
+	int Ans=0; clr(pos,0);
+	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (!gridInfo[color][y][x] && y<h[x]) Ans+=(v[x][y]?1:2), pos[y]=true;
 	return Ans;
 }
 
@@ -608,12 +593,22 @@ inline double Value(int color, int NerID)
 	a=0; rep(x, 1, MAPWIDTH-1) if (abs(h[x]-h[x+1])==2) a++; z[11]=Ner[NerID].weight[14]*a;
 	a=0; rep(x, 1, MAPWIDTH-2) if (abs(h[x]-h[x+1])<=1 && abs(h[x]-h[x+2])<=1 && abs(h[x+1]-h[x+2])<=1) a++; 
 	z[12]=Ner[NerID].weight[15]*a;
+	a=0; h[0]=h[MAPWIDTH+1]=30; rep(x, 1, MAPWIDTH) if (h[x-1]-h[x]>=3 && h[x+1]-h[x]>=3) a++;
+	z[17]=Ner[NerID].weight[20]*a;
 	sort(h+1, h+1+MAPWIDTH); 
 	z[13]=Ner[NerID].weight[16]*(h[2]-h[1]);
+	a=0; rep(y, h[1]+1, min(h[1]+4,MAPHEIGHT)) a+=(!pos[y]); z[14]=Ner[NerID].weight[17]*a;
+	z[15]=Ner[NerID].weight[18]*(!pos[h[1]+1]);
+	a=0; rep(y, 1, MAPHEIGHT) a+=(!pos[y]); z[16]=Ner[NerID].weight[19]*a;
+	
+	a=0; rep(o, 0, 6) if (o!=5) a+=typeCountForColor[color][o];
+	a=(typeCountForColor[color][5]+2)*6-a;
+	z[13]*=Ner[NerID].weight[21]*a+Ner[NerID].weight[22];
 	
 	rep(i, 0, NerN-1) z[i]+=Ner[NerID].b0[i];
-	rep(i, 0, NerN-6) Cal(z[i], Ner[NerID].ActType);
-	rep(i, NerN-5, NerN-1) Cal(z[i], -1);
+	rep(i, 0, 8) Cal(z[i], Ner[NerID].ActType);
+	rep(i, 9, 13) Cal(z[i], -1);
+	rep(i, 14, NerN-1) Cal(z[i], Ner[NerID].ActType);
 	double y=0;
 	rep(i, 0, NerN-1) y+=z[i]*Ner[NerID].theta[i];
 	
@@ -674,7 +669,7 @@ inline Tetris Determine(int currBotColor, int type, int NerColor)
 		
 		if (block.onGround() && Ner[NerColor].ActType>=0)
 		{
-			Util::backup(); block.place(); Util::eliminate(currBotColor); // 消行，对方不加行
+			Util::backup(); block.place(); Util::eliminate(currBotColor); // 消行，对方不加行 
 			if ((tmp=Value(currBotColor,NerColor))>mx) mx=tmp, BestAction.set(block.blockX,block.blockY,block.orientation);
 			Util::recover();
 		}
@@ -722,10 +717,14 @@ inline void WorstDetermine(int color)
 	rep(type, 0, 6)
 	{
 		if (typeCountForColor[color][type] == maxCount && maxCount - minCount == 2) continue;
+		typeCountForColor[color][type]++;
+		
 		Tetris block=Determine(color, type, color^1); if (block.orientation<0) {blockForEnemy=type; return;}
-		Util::backup(); block.place(); Util::eliminate(color);
+		Util::backup(); block.place(); Util::eliminate(color); 
 		if ((tmp=Value(color,color^1))<mn) mn=tmp, blockForEnemy=type;
 		Util::recover();
+		
+		typeCountForColor[color][type]--;
 	}
 }
 

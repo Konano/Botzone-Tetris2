@@ -31,8 +31,8 @@ typedef pair<double,int> Pdi;
 typedef long double ld;
 typedef unsigned long long ull;
 
-#define NerM 17
-#define NerN 14
+#define NerM 23
+#define NerN 18
 #define NerNum 20
 #define OPNum 1
 #define HPinit 30
@@ -79,22 +79,6 @@ inline void NeuronComb(Neuron &a, Neuron &b, Neuron &c, double o)
 
 
 
-inline void Death(int a)
-{
-	while ((NerCnt+1)%100==v[1]%100)
-	{
-		rep(i, 2, NerNum) swap(v[i-1], v[i]), swap(hp[i-1], hp[i]);
-		hp[NerNum]=min(hp[NerNum], HPinit*2);
-	}
-	
-	rep(i, a+1, NerNum) swap(v[i-1], v[i]), swap(hp[i-1], hp[i]);
-	a=NerNum; v[a]=++NerCnt, hp[a]=HPinit;
-	NeuronComb(Ner[v[rand()%4+1]], Ner[v[rand()%4+1]], Ner[v[a]], 0.5+rand2()*0.2);
-	NeuronVary(Ner[v[a]], rand01()/5);
-}
-
-
-
 inline void OutputNer(int a) 
 {
 	rep(i, 0, NerM-1) printf("%.9lf%c", Ner[v[a]].weight[i], i==NerM-1?'\n':' ');
@@ -130,7 +114,7 @@ inline void InputData()
 	rep(o, 1, NerNum) InputNer(o);
 	fclose(stdin);
 	
-	NerCnt=v[NerNum];
+	rep(o, 1, NerNum) NerCnt=max(NerCnt, v[o]);
 }
 
 inline int Game(int player0, int player1)
@@ -165,6 +149,16 @@ inline void OutputSomething()
 	puts("");
 }
 
+inline int Choose(){int x=rand()%10; return x<3?1:(x<5?2:(x<7?3:x-3));}
+inline void Sort(int x){while (x>1 && hp[x-1]<hp[x]) swap(hp[x-1],hp[x]), swap(v[x-1],v[x]), x--;}
+inline void Death()
+{
+	v[NerNum]=++NerCnt, hp[NerNum]=HPinit;
+	NeuronComb(Ner[v[Choose()]], Ner[v[Choose()]], Ner[v[NerNum]], 0.5+rand2()*0.2);
+	NeuronVary(Ner[v[NerNum]], rand01()/5);
+	Sort(NerNum);
+}
+
 int TIM=0;
 int main()
 {
@@ -177,7 +171,9 @@ int main()
 	{
 		int A=0, B=0;
 		while (A==B) A=rand()%NerNum+1, B=rand()%NerNum+1;
-		Game(A,B); if (hp[A]<=0) Death(A); if (hp[B]<=0) Death(B);
+		Game(A,B);
+		rep(i, 1, NerNum) Sort(i);
+		while (hp[NerNum]<=0) Death();
 		
 		TIM++; if (TIM%NerNum==0)
 		{

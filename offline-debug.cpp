@@ -465,8 +465,8 @@ namespace Util
 
 
 
-#define NerM 12
-#define NerN 9
+#define NerM 20
+#define NerN 17
 
 struct Neuron
 {
@@ -491,6 +491,7 @@ inline void GetNer(int a)
 
 inline double Cal(double x, int type)
 {
+	if (type==-1) return abs(x);
 	if (type==0) return (sqrt(x*x+1)-1)/2.0+x;
 	if (type==1) return x;
 	if (type==2) return 1.0/(1.0+exp(-x));
@@ -528,10 +529,11 @@ inline int LK(int color)
 	return Ans;
 }
 
+bool pos[MAPHEIGHT+2];
 inline int BlankCount(int color)
 {
-	int Ans=0;
-	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (!gridInfo[color][y][x] && y<h[x]) Ans+=v[x][y]?1:2;
+	int Ans=0; clr(pos,0);
+	rep(x, 1, MAPWIDTH) rep(y, 1, MAPHEIGHT) if (!gridInfo[color][y][x] && y<h[x]) Ans+=(v[x][y]?1:2), pos[y]=true;
 	return Ans;
 }
 
@@ -606,9 +608,20 @@ inline double Value(int color, int NerID)
 	rep(i, 0, 6) if (i!=5) tmp=CanPlace(color,i), mn0=max(tmp.first,mn0), mn1=min(tmp.second,mn1);
 	z[7]=Ner[NerID].weight[10]*mn0;
 	z[8]=Ner[NerID].weight[11]*mn1;
+	a=0; rep(x, 1, MAPWIDTH-1) if (abs(h[x]-h[x+1])==0) a++; z[9]=Ner[NerID].weight[12]*a;
+	a=0; rep(x, 1, MAPWIDTH-1) if (abs(h[x]-h[x+1])==1) a++; z[10]=Ner[NerID].weight[13]*a;
+	a=0; rep(x, 1, MAPWIDTH-1) if (abs(h[x]-h[x+1])==2) a++; z[11]=Ner[NerID].weight[14]*a;
+	a=0; rep(x, 1, MAPWIDTH-2) if (abs(h[x]-h[x+1])<=1 && abs(h[x]-h[x+2])<=1 && abs(h[x+1]-h[x+2])<=1) a++; 
+	z[12]=Ner[NerID].weight[15]*a;
+	sort(h+1, h+1+MAPWIDTH); 
+	z[13]=Ner[NerID].weight[16]*(h[2]-h[1]);
+	a=0; rep(y, h[1]+1, min(h[1]+4,MAPHEIGHT)) a+=(!pos[y]); z[14]=Ner[NerID].weight[17]*a;
+	z[15]=Ner[NerID].weight[18]*(!pos[h[1]+1]);
+	a=0; rep(y, 1, MAPHEIGHT) a+=(!pos[y]); z[16]=Ner[NerID].weight[19]*a;
 	
 	rep(i, 0, NerN-1) z[i]+=Ner[NerID].b0[i];
-	rep(i, 0, NerN-1) Cal(z[i], Ner[NerID].ActType);
+	rep(i, 0, NerN-6) Cal(z[i], Ner[NerID].ActType);
+	rep(i, NerN-5, NerN-1) Cal(z[i], -1);
 	double y=0;
 	rep(i, 0, NerN-1) y+=z[i]*Ner[NerID].theta[i];
 	
@@ -625,6 +638,7 @@ Hmax^2
 本方块在消除行的个数
 可放置情况 max(min())
 可放置个数 min()
+00 10 20 010 极差
 */
 
 
