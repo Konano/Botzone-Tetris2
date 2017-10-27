@@ -704,7 +704,7 @@ inline int WorstDetermine(int color)
 		typeCountForColor[color][type]++;
 		
 		Tetris block=Determine(color, type); if (block.orientation<0) return type;
-		Util::backup(); block.place(); Util::eliminate(color); typeCountForColor[color][type]++;
+		Util::backup(); block.place(); Util::eliminate(color);
 		if ((tmp=Value(color))<mn) mn=tmp, blockForEnemy=type;
 		Util::recover();
 		
