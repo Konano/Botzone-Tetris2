@@ -44,7 +44,7 @@ typedef unsigned long long ull;
 int gridInfo[2][MAPHEIGHT + 2][MAPWIDTH + 2] = { 0 };
  
 // 代表分别向对方转移的行
-int trans[2][4][MAPWIDTH + 2] = { 0 };
+int trans[2][6][MAPWIDTH + 2] = { 0 };
  
 // 转移行数
 int transCount[2] = { 0 };
@@ -91,7 +91,7 @@ struct backupNode
 	int gridInfo[2][MAPHEIGHT + 2][MAPWIDTH + 2];
 	 
 	// 代表分别向对方转移的行
-	int trans[2][4][MAPWIDTH + 2];
+	int trans[2][6][MAPWIDTH + 2];
 	 
 	// 转移行数
 	int transCount[2];

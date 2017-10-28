@@ -46,7 +46,7 @@ int ED;
 int gridInfo[2][MAPHEIGHT + 2][MAPWIDTH + 2];  // backup
  
 // 代表分别向对方转移的行
-int trans[2][4][MAPWIDTH + 2];  // backup
+int trans[2][6][MAPWIDTH + 2];  // backup
  
 // 转移行数
 int transCount[2];  // backup
@@ -93,7 +93,7 @@ struct backupNode
 	int gridInfo[2][MAPHEIGHT + 2][MAPWIDTH + 2];
 	 
 	// 代表分别向对方转移的行
-	int trans[2][4][MAPWIDTH + 2];
+	int trans[2][6][MAPWIDTH + 2];
 	 
 	// 转移行数
 	int transCount[2];
@@ -788,7 +788,20 @@ int main()
 	GetNer(0); GetNer(1);
 
 	istream::sync_with_stdio(false);
+	
+#ifndef _BOTZONE_ONLINE	
+	freopen("seed.txt", "r", stdin); 
+	int seed; cin >> seed;
+	srand(seed); fclose(stdin);
+	freopen("seed.txt", "w", stdout);
+	printf("%d\n", rand()*(RAND_MAX+1)+rand()+(int)(time(NULL)%10000));
+	fclose(stdout);
+#endif
+	
+#ifdef _BOTZONE_ONLINE	
 	srand(time(NULL));
+#endif
+
 	Util::init(); // 围护城河
 	
 	blockType = rand()%7;

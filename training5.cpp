@@ -150,8 +150,8 @@ inline void OutputSomething()
 }
 
 inline int Choose(){int x=rand()%10; return x<3?1:(x<5?2:(x<7?3:x-3));}
-inline void Sort(int x){while (x>1 && hp[x-1]<hp[x]) swap(hp[x-1],hp[x]), swap(v[x-1],v[x]), x--;}
-inline void Death()
+inline void Sort(int x){while (x<NerNum && v[x]>v[x+1]) swap(hp[x],hp[x+1]), swap(v[x],v[x+1]), x++;}
+inline void Death(int x)
 {
 	v[NerNum]=++NerCnt, hp[NerNum]=HPinit;
 	NeuronComb(Ner[v[Choose()]], Ner[v[Choose()]], Ner[v[NerNum]], 0.5+rand2()*0.2);
@@ -167,13 +167,13 @@ int main()
 	int tmp; scanf("%d", &tmp);
 	if (tmp) InputData(); else rep(i, 1, NerNum) NeuronInit(i);
 	
+	dow(i, NerNum, 1) Sort(i);
 	int TIM=0; while (NerCnt<=MaxNerNum)
 	{
 		int A=0, B=0;
 		while (A==B) A=rand()%NerNum+1, B=rand()%NerNum+1;
 		Game(A,B);
-		rep(i, 1, NerNum) Sort(i);
-		while (hp[NerNum]<=0) Death();
+		rep(i, 1, NerNum) if (hp[i]<=0) Death(i);
 		
 		TIM++; if (TIM%NerNum==0)
 		{
