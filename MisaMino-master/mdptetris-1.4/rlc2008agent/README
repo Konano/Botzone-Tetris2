@@ -1,0 +1,7 @@
+In order to run the agent:
+
+- copy the directory "rlc2008agent/" in the "agents" directory of the code of the RLCompetition software
+- launch by ./run.bash
+
+
+

@@ -1,0 +1,33 @@
+NanoApe：
+一开始错误的 Pierre Dellacherie 算法 + GA
+
+Pierre Dellacherie：
+40%	1-0	60%
+
+Pierre Dellacherie 2：
+若优先级相等则选取 BlockY 小的
+57%	2-1	43%
+
+Pierre Dellacherie 3：
+行列过渡拆分
+自设参数
+74%	3-2	26%
+
+Pierre Dellacherie 4：
+修改了 boardRowTransitions 的计算方式
+69%	4-3	31%
+
+Pierre Dellacherie 5：
+我……我就随便 GA 一发……怎么回事啊？？？？
+13%	4-5	87%
+
+DU + MCTS 2：
+蒙特卡洛加 DU 参数
+79%	6-5	21%
+
+DU + MCTS 3：
+Value2 加连击参数
+eliminateUnit = 2
+修正计算 Wall 参数的 Bug
+Value 分开计算
+v2ave 动态维护
